@@ -71,6 +71,7 @@ static int decode_exec(Decode *s) {
 }
 
 int isa_exec_once(Decode *s) {
+  // riscv32 指令集长度固定，总是为 4 个字节，因此每执行一条指令，下一条指令的地址都在当前基础上加 4. 代码跳转的特殊情况例外。
   s->isa.inst.val = inst_fetch(&s->snpc, 4);
   return decode_exec(s);
 }
