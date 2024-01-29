@@ -45,7 +45,8 @@ static struct rule {
 
 static regex_t re[NR_REGEX] = {};
 
-/* Rules are used for many times.
+/* construct our own regex rules and patterns
+ * Rules are used for many times.
  * Therefore we compile them only once before any usage.
  */
 void init_regex() {
