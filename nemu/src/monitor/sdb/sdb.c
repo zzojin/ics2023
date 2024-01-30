@@ -13,6 +13,7 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
+#include <inttypes.h>
 #include <isa.h>
 #include <cpu/cpu.h>
 #include <readline/readline.h>
@@ -37,7 +38,8 @@ static char* rl_gets() {
   line_read = readline("(nemu) ");
 
   if (line_read && *line_read) {
-    add_history(line_read);
+      // add_history 也是 realdline 库的函数，为 readline 函数读取方向键提供历史记录
+      add_history(line_read);
   }
 
   return line_read;
@@ -55,6 +57,7 @@ static int cmd_q(char *args) {
 }
 
 static int cmd_help(char *args);
+static int cmd_si(char *args);
 
 static struct {
   const char *name;
@@ -66,7 +69,7 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
 
   /* TODO: Add more commands */
-
+  { "si", "Step N instruction", cmd_si },
 };
 
 #define NR_CMD ARRLEN(cmd_table)
@@ -91,6 +94,17 @@ static int cmd_help(char *args) {
     }
     printf("Unknown command '%s'\n", arg);
   }
+  return 0;
+}
+
+static int cmd_si(char *args) {
+  char *arg = strtok(NULL, " ");
+  uint64_t num;
+
+  if (arg == NULL) {num = 1; }
+  else {sscanf(arg, "%" SCNu64, &num); }
+  // execute(num);
+  cpu_exec(num);
   return 0;
 }
 
