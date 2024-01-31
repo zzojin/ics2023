@@ -72,6 +72,8 @@ static int decode_exec(Decode *s) {
 
 int isa_exec_once(Decode *s) {
   // riscv32 指令集长度固定，总是为 4 个字节，因此每执行一条指令，下一条指令的地址都在当前基础上加 4. 代码跳转的特殊情况例外。
+  // 更新 snpc, +4
   s->isa.inst.val = inst_fetch(&s->snpc, 4);
+  // TODO: 译码，更新 dnpc = snpc, 但是在 decode_exec() 中我只简单看到用 snpc 对 dnpc 赋值，如果遇到指令跳转的情况，这就有问题了，不过现在还没有实现跳转指令。
   return decode_exec(s);
 }

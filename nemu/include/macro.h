@@ -38,14 +38,17 @@
 // macro testing
 // See https://stackoverflow.com/questions/26099745/test-if-preprocessor-symbol-is-defined-inside-macro
 #define CHOOSE2nd(a, b, ...) b
+// TODO: 这里的 contain_comma 是不是后面要加逗号啊，单独作为一个参数
 #define MUX_WITH_COMMA(contain_comma, a, b) CHOOSE2nd(contain_comma a, b)
 #define MUX_MACRO_PROPERTY(p, macro, a, b) MUX_WITH_COMMA(concat(p, macro), a, b)
 // define placeholders for some property
+//TODO:  __P_DEF_0 and __P_DEF_1 的结果都带有逗号，是不是搞错了。这样 MUXDEF 永远都选择第二个选项，无论 macro 是否被定义
 #define __P_DEF_0  X,
 #define __P_DEF_1  X,
 #define __P_ONE_1  X,
 #define __P_ZERO_0 X,
 // define some selection functions based on the properties of BOOLEAN macro
+// 当 macro = 0 时，会衍生成 __P_DEF_0, 进而会变成 X, 注意带了逗号
 #define MUXDEF(macro, X, Y)  MUX_MACRO_PROPERTY(__P_DEF_, macro, X, Y)
 #define MUXNDEF(macro, X, Y) MUX_MACRO_PROPERTY(__P_DEF_, macro, Y, X)
 #define MUXONE(macro, X, Y)  MUX_MACRO_PROPERTY(__P_ONE_, macro, X, Y)

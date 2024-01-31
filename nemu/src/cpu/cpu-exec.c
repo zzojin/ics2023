@@ -36,6 +36,7 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
   if (ITRACE_COND) { log_write("%s\n", _this->logbuf); }
 #endif
+  // 打印指令地址、指令二进制码、反汇编结果
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
 }
@@ -43,16 +44,27 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 static void exec_once(Decode *s, vaddr_t pc) {
   s->pc = pc;
   s->snpc = pc;
+  // 匹配并执行指令，更新 snpc 和 dnpc
   isa_exec_once(s);
   cpu.pc = s->dnpc;
+  
+  
   // 如果定义了追踪，还会记录每次执行的指令的二进制以及其反汇编代码
 #ifdef CONFIG_ITRACE
   char *p = s->logbuf;
+ 
+  // 第一步先获取地址，加一个英文冒号，将其写入到 p
   p += snprintf(p, sizeof(s->logbuf), FMT_WORD ":", s->pc);
+ 
+  // 计算指令长度, 对于 riscv32 而言，ilen 通常都是 4
   int ilen = s->snpc - s->pc;
   int i;
+ 
+  // inst is an union,  val 是 uint32_t
   uint8_t *inst = (uint8_t *)&s->isa.inst.val;
+  // 每次写入 1 个 uint8 类型的变量，即 1 个字节，重复 4 次，刚好是一个 riscv32 指令的长度。用 2 位 16 进制数表示一个 uint8 类型的变量
   for (i = ilen - 1; i >= 0; i --) {
+    // 一个空格，两个 16 进制字符,位宽不够时用 0 填充
     p += snprintf(p, 4, " %02x", inst[i]);
   }
   int ilen_max = MUXDEF(CONFIG_ISA_x86, 8, 4);
@@ -61,11 +73,11 @@ static void exec_once(Decode *s, vaddr_t pc) {
   space_len = space_len * 3 + 1;
   memset(p, ' ', space_len);
   p += space_len;
-
 #ifndef CONFIG_ISA_loongarch32r
   void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
   disassemble(p, s->logbuf + sizeof(s->logbuf) - p,
       MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc), (uint8_t *)&s->isa.inst.val, ilen);
+//printf("p:%s %ld\n", p, p - s->logbuf);
 #else
   p[0] = '\0'; // the upstream llvm does not support loongarch32r
 #endif
@@ -75,6 +87,7 @@ static void exec_once(Decode *s, vaddr_t pc) {
 static void execute(uint64_t n) {
   Decode s;
   for (;n > 0; n --) {
+    // 执行指令，同时更新 pc snpc dnpc
     exec_once(&s, cpu.pc);
     g_nr_guest_inst ++;
     trace_and_difftest(&s, cpu.pc);
