@@ -12,14 +12,15 @@
 *
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
-
+/* sdb.h 不在 include 目录下，它的引入得是 ""，而不能用 <> */
 #include <inttypes.h>
 #include <isa.h>
 #include <cpu/cpu.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
-#include "utils.h"
+#include <utils.h>
+#include <memory/vaddr.h>
 
 static int is_batch_mode = false;
 static int qflag = 0;
@@ -59,6 +60,7 @@ static int cmd_q(char *args) {
 static int cmd_help(char *args);
 static int cmd_si(char *args);
 static int cmd_info(char *args);
+static int cmd_x(char *args);
 
 static struct {
   const char *name;
@@ -72,6 +74,7 @@ static struct {
   /* TODO: Add more commands */
   { "si", "Step N instruction", cmd_si },
   { "info", "print register or watchpoint", cmd_info },
+  { "x", "print memory", cmd_x },
 };
 
 #define NR_CMD ARRLEN(cmd_table)
@@ -119,6 +122,32 @@ static int cmd_info(char *args) {
     }
     return 0;
 }
+
+static int cmd_x(char *args) {
+    unsigned int num = 1;
+    vaddr_t addr;
+    word_t mem;
+    int ret;
+    ret = sscanf(args, "%u %x", &num, &addr);
+    if (ret < 2) {
+        // 如果第一次读取失败，则尝试只读取十六进制数
+        sscanf(args, "%x", &addr);
+    }
+    /*sscanf(args, "%u %x", &num, &addr);*/
+    Log("test scanf: %u, %x", num, addr);
+    addr = 0x80000000;
+    for (int i = 1; i <= num; i++) {
+        if (i % 8 == 1) {
+            printf("0x%08x :", addr);
+        }
+        mem = vaddr_read(addr, 1);
+        printf("\t0x%02x", mem);
+        if (i % 8 == 0 || i == num) {printf("\n"); };
+        addr += 1;
+    }
+    return 0;
+}
+
 
 void sdb_set_batch_mode() {
   is_batch_mode = true;
