@@ -61,6 +61,7 @@ static int cmd_help(char *args);
 static int cmd_si(char *args);
 static int cmd_info(char *args);
 static int cmd_x(char *args);
+static int cmd_p(char *args);
 
 static struct {
   const char *name;
@@ -75,6 +76,7 @@ static struct {
   { "si", "Step N instruction", cmd_si },
   { "info", "print register or watchpoint", cmd_info },
   { "x", "print memory", cmd_x },
+  { "p", "compute expression", cmd_p },
 };
 
 #define NR_CMD ARRLEN(cmd_table)
@@ -148,6 +150,16 @@ static int cmd_x(char *args) {
     return 0;
 }
 
+static int cmd_p(char *args) {
+    bool success = true;
+    word_t res = expr(args, &success);
+    if (success) {
+        printf("%u\n", res);
+    } else {
+        printf("the expression is wrong, check it\n");
+    }
+    return 0;
+}
 
 void sdb_set_batch_mode() {
   is_batch_mode = true;
