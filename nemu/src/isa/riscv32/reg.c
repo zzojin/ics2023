@@ -15,6 +15,7 @@
 
 #include <isa.h>
 #include "local-include/reg.h"
+#include "debug.h"
 
 const char *regs[] = {
   "$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
@@ -31,5 +32,17 @@ void isa_reg_display() {
 }
 
 word_t isa_reg_str2val(const char *s, bool *success) {
-  return 0;
+    if (strcmp("pc", s) == 0) {
+        return cpu.pc;
+    }
+    if (strcmp("0", s) == 0) {
+        return cpu.gpr[0];
+    }
+    for (int i = 0; i < sizeof(regs) / sizeof(regs[0]); i++) {
+        if (strcmp(regs[i], s) == 0)
+            return cpu.gpr[i];
+    }
+    *success = false;
+    Log("No such register");
+    return -1;
 }
