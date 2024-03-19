@@ -19,6 +19,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
+#include <stdio.h>
 #include <utils.h>
 #include <memory/vaddr.h>
 
@@ -62,6 +63,8 @@ static int cmd_si(char *args);
 static int cmd_info(char *args);
 static int cmd_x(char *args);
 static int cmd_p(char *args);
+static int cmd_w(char *args);
+static int cmd_d(char *args);
 
 static struct {
   const char *name;
@@ -77,6 +80,8 @@ static struct {
   { "info", "print register or watchpoint", cmd_info },
   { "x", "print memory", cmd_x },
   { "p", "compute expression", cmd_p },
+  { "w", "add new watchpoint", cmd_w },
+  { "d", "delete watchpoint by number", cmd_d }
 };
 
 #define NR_CMD ARRLEN(cmd_table)
@@ -120,7 +125,7 @@ static int cmd_info(char *args) {
     if (*arg == 'r') {
         isa_reg_display();
     } else if (*arg == 'w') {
-        printf("later support");
+        display_wp();
     }
     return 0;
 }
@@ -136,8 +141,6 @@ static int cmd_x(char *args) {
         sscanf(args, "%x", &addr);
     }
     /*sscanf(args, "%u %x", &num, &addr);*/
-    Log("test scanf: %u, %x", num, addr);
-    addr = 0x80000000;
     for (int i = 1; i <= num; i++) {
         if (i % 8 == 1) {
             printf("0x%08x :", addr);
@@ -158,6 +161,18 @@ static int cmd_p(char *args) {
     } else {
         printf("the expression is wrong, check it\n");
     }
+    return 0;
+}
+
+static int cmd_w(char *args) {
+    new_wp(args);
+    return 0;
+}
+
+static int cmd_d(char *args) {
+    int NO;
+    sscanf(args, "%d", &NO);
+    free_wp(NO);
     return 0;
 }
 

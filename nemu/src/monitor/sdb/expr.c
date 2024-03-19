@@ -26,8 +26,14 @@
 #include <stdio.h>
 
 enum {
-  TK_NOTYPE = 256, TK_EQ, TK_NEQ, TK_AND, TK_OR, TK_DIGIT, TK_PAREN_LEFT, TK_PAREN_RIGHT, TK_DEREF, TK_HEX, TK_REG, TK_CERTAIN_TYPES, TK_PLUS, TK_SUB, TK_MUL, TK_DIV,
-
+  TK_NOTYPE = 256,
+  TK_DIGIT, TK_PAREN_LEFT, TK_PAREN_RIGHT, TK_HEX, TK_REG,
+  TK_DEREF, 
+  TK_MUL, TK_DIV,
+  TK_PLUS, TK_SUB,
+  TK_EQ, TK_NEQ,
+  TK_AND,
+  TK_OR,
   /* TODO: Add more token types */
 
 };
@@ -40,7 +46,8 @@ static struct rule {
   /* TODO: Add more rules.
    * Pay attention to the precedence level of different rules.
    */
-
+  {"0x[0-9a-fA-F]+", TK_HEX},  // must be in front of TK_DIGIT, 0xff will match TK_DI
+  {"\\$[0-9a-zA-Z]+", TK_REG},                      
   {" +", TK_NOTYPE},    // spaces, + 在正则表达式中表示符号至少出现一次,所以是多个空格
   {"\\+", TK_PLUS},         // plus
   {"==", TK_EQ},        // equal, extended 表达式不支持前瞻断言等，因此 = 是一个普通字符，可以直接匹配
@@ -50,8 +57,6 @@ static struct rule {
   {"\\-", TK_SUB},         // sub
   {"\\*", TK_MUL},         // mul
   {"/", TK_DIV},           // div
-  {"0x[0-9a-fA-F]+", TK_HEX},  // must be in front of TK_DIGIT, 0xff will match TK_DIGIT
-  {"\\$[0-9a-zA-Z]+", TK_REG},
   {"[0-9]+", TK_DIGIT},   // digit, extended regex don't support \d etc, perl regex does
   {"\\(", TK_PAREN_LEFT}, // parenthesis
   {"\\)", TK_PAREN_RIGHT}, // parenthesis right
@@ -235,7 +240,6 @@ word_t eval(int p, int q, bool *success) {
         return eval(p + 1, q - 1, success);
     } else {
         // find main op, and split expression, final compute two expression results with op
-        bool plus_sub = false;
         int position = -1;
         int op = 0;
         int in_parenthesis = 0;
@@ -250,15 +254,33 @@ word_t eval(int p, int q, bool *success) {
             } else if (in_parenthesis != 0) {
                 continue;
             }
-            // 判定主op时，加号和减号的优先级高于乘号 除号 DEREF
-            if (!plus_sub && (tokens[i].type == TK_MUL || tokens[i].type == TK_DIV || tokens[i].type == TK_DEREF)) {
+            // not op
+            if (tokens[i].type < TK_DEREF)
+                continue;
+
+            // 判定主op. 维护好 op 的优先级 level
+            if (tokens[i].type == TK_DEREF && op <= TK_DEREF) {
                 position = i;
                 op = tokens[i].type;
-            } else if (tokens[i].type == TK_SUB || tokens[i].type == TK_PLUS) {
+            } else if ((tokens[i].type == TK_MUL || tokens[i].type == TK_DIV) && op <= TK_DIV) {
                 position = i;
                 op = tokens[i].type;
-                plus_sub = true;
+            } else if ((tokens[i].type == TK_PLUS || tokens[i].type == TK_SUB) && op <= TK_SUB) {
+                position = i;
+                op = tokens[i].type;
+            } else if ((tokens[i].type == TK_EQ || tokens[i].type == TK_NEQ) && op <= TK_NEQ) {
+                position = i;
+                op = tokens[i].type;
+            } else if (tokens[i].type == TK_AND && op <= TK_AND) {
+                position = i;
+                op = tokens[i].type;
+            } else if (tokens[i].type == TK_OR && op <= TK_OR) {
+                position = i;
+                op = tokens[i].type;
             }
+        }
+        if (op == 0) {
+            Log("something wrong, can't match any op");
         }
         word_t val1, val2;
         if (op != TK_DEREF) {
@@ -277,6 +299,7 @@ word_t eval(int p, int q, bool *success) {
             case TK_DEREF: return vaddr_read(val2, 4);          
             default: {
                 *success = false;
+                Log("can't match op");
                 return 0;
             }
         }
