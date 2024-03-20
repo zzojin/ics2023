@@ -75,8 +75,9 @@ void free_wp(int NO) {
         return;
     }
     prev->next = cur->next;
+    // 如果删除的是头结点
     if (cur == head)
-        head = NULL;
+        head = cur->next;
 
     WP *temp = free_;
     free_ = cur;
@@ -85,8 +86,10 @@ void free_wp(int NO) {
 
 void display_wp() {
     WP *cur = head;
-    if (cur == NULL)
+    if (cur == NULL) {
         Log("No watchpoint");
+        return;
+    }
     printf("%-10s%-50s\n", "NO", "expr");
     while (cur != NULL) {
         printf("%-10d%-50s\n", cur->NO, cur->exp);
