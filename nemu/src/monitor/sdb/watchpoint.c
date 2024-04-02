@@ -101,6 +101,8 @@ bool check_wp() {
     WP *cur = head;
     bool changed = false;
     bool success = true;
+    char old_value[100];
+    char new_value[100];
     while (cur != NULL) {
         word_t res = expr(cur->exp, &success);
         if (!success) {
@@ -109,8 +111,10 @@ bool check_wp() {
         }
         if (!cur->initialized || res != cur->old_value) {
             if (!changed) 
-                printf("%-10s%-50s%-20s%-20s\n", "NO", "expr", "old", "new");
-            printf("%-10d%-50s%-20u%-20u\n", cur->NO, cur->exp, cur->old_value, res);
+                printf("%-10s%-50s%-30s%-30s\n", "NO", "expr", "old", "new");
+            snprintf(old_value, sizeof(old_value), "%u/0x%X", cur->old_value, cur->old_value);
+            snprintf(new_value, sizeof(new_value), "%u/0x%X", res, res);
+            printf("%-10d%-50s%-30s%-30s\n", cur->NO, cur->exp, old_value, new_value);
             changed = true;
             cur->initialized = true;
             cur->old_value = res;

@@ -27,6 +27,7 @@ typedef struct Decode {
 } Decode;
 
 // --- pattern matching mechanism ---
+// shift 在编码层面没有实际的作用，它主要作用是帮助编译器优化（PA 讲义原话）
 __attribute__((always_inline))
 static inline void pattern_decode(const char *str, int len,
     uint64_t *key, uint64_t *mask, uint64_t *shift) {
@@ -50,7 +51,9 @@ static inline void pattern_decode(const char *str, int len,
 #define macro16(i) macro8(i);  macro8((i) + 8)
 #define macro32(i) macro16(i); macro16((i) + 16)
 #define macro64(i) macro32(i); macro32((i) + 32)
+  // 真正执行的语句。嵌套宏定义，在运行时展开，避免运行时展开有一系列的条件判断指令
   macro64(0);
+  // macro64 如果能够正常执行，那么会直接跳转到 finish，不会触发 panic 语句的执行
   panic("pattern too long");
 #undef macro
 finish:
@@ -87,6 +90,7 @@ finish:
 
 
 // --- pattern matching wrappers for decode ---
+// 匹配 s 保存的指令和 pattern，如果匹配上了，做进一步的操作数提取
 #define INSTPAT(pattern, ...) do { \
   uint64_t key, mask, shift; \
   pattern_decode(pattern, STRLEN(pattern), &key, &mask, &shift); \

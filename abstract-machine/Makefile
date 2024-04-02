@@ -24,7 +24,7 @@ ifeq ($(wildcard $(AM_HOME)/am/include/am.h),)
   $(error $$AM_HOME must be an AbstractMachine repo)
 endif
 
-### Check: environment variable `$ARCH` must be in the supported list
+### Check: environment variable `$ARCH` must be in the supported list, $$ARCH 在最终的报错信息中会直接显示成 $ARCH
 ARCHS = $(basename $(notdir $(shell ls $(AM_HOME)/scripts/*.mk)))
 ifeq ($(filter $(ARCHS), $(ARCH)), )
   $(error Expected $$ARCH in {$(ARCHS)}, Got "$(ARCH)")
@@ -92,9 +92,13 @@ ASFLAGS  += -MMD $(INCFLAGS)
 LDFLAGS  += -z noexecstack
 
 ## 4. Arch-Specific Configurations
+#$(info ARCH is $(ARCH))
 
 ### Paste in arch-specific configurations (e.g., from `scripts/x86_64-qemu.mk`)
 -include $(AM_HOME)/scripts/$(ARCH).mk
+
+#$(info CC is $(CC), ARCH is $(ARCH), cross compile is $(CROSS_COMPILE))
+#$(info common cflags $(COMMON_CFLAGS))
 
 ### Fall back to native gcc/binutils if there is no cross compiler
 ifeq ($(wildcard $(shell which $(CC))),)
