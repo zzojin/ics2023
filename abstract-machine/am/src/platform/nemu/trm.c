@@ -9,7 +9,7 @@ Area heap = RANGE(&_heap_start, PMEM_END);
 #define MAINARGS ""
 #endif
 static const char mainargs[] = MAINARGS;
-
+// 为什么总是在固定的地址上写入，会覆盖已有的字节
 void putch(char ch) {
   outb(SERIAL_PORT, ch);
 }

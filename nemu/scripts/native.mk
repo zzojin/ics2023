@@ -23,7 +23,8 @@ compile_git:
 $(BINARY):: compile_git
 
 # Some convenient rules
-
+# 如果 ARGS 此时没有被定义，那么会被赋值。本项目中，ARGS 有值的场景是在 nemu 项目外使用 nemu 运行程序。 
+# override 与 ?= 搭配使用下，失去了强制赋值的效果，与单用 ?= 效果几乎一样
 override ARGS ?= --log=$(BUILD_DIR)/nemu-log.txt
 override ARGS += $(ARGS_DIFF)
 
@@ -32,7 +33,7 @@ IMG ?=
 NEMU_EXEC := $(BINARY) $(ARGS) $(IMG)
 
 run-env: $(BINARY) $(DIFF_REF_SO)
-
+# 无论是 nemu 目录下执行 make 还是从 abstract-machine 的 run 目标跳转目录过来实现 run 目标，关键都是 $(BINARY)，这个定义在 build.mk 中，就是 nemu 项目的编译链接结果。所以整体上就是，nemu 的可执行文件，读取 ARGS IMG 参数，开始执行。
 run: run-env
 	$(call git_commit, "run NEMU")
 	$(NEMU_EXEC)

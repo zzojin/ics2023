@@ -78,6 +78,8 @@ static int parse_args(int argc, char *argv[]) {
     {0          , 0                , NULL,  0 },
   };
   int o;
+  // - 表示开启无 - 匹配，即某个参数不需要 - 或 -- 来表示这是一个参数，可以直接通过字符串。此类无提示符号的参数的解析返回值是 1
+  // 如果 getopt_long返回 0，表示那些没有设置短选项的长选项参数, 并且会自动设置 flag。flag 是 option 的第三个参数，如果不为 NULL，能够自动保存参数的 val。 
   while ( (o = getopt_long(argc, argv, "-bhl:d:p:", table, NULL)) != -1) {
     switch (o) {
       case 'b': sdb_set_batch_mode(); break;

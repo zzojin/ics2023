@@ -56,6 +56,7 @@ IMAGE     = $(abspath $(IMAGE_REL))
 ARCHIVE   = $(WORK_DIR)/build/$(NAME)-$(ARCH).a
 
 ### Collect the files to be linked: object files (`.o`) and libraries (`.a`)
+### SRCS and NAME 都是由客户程序那边的 Makefile 生成的，详见am-kernals/test/cpu-tests/Makefile 
 OBJS      = $(addprefix $(DST_DIR)/, $(addsuffix .o, $(basename $(SRCS))))
 LIBS     := $(sort $(LIBS) am klib) # lazy evaluation ("=") causes infinite recursions
 LINKAGE   = $(OBJS) \
@@ -110,6 +111,8 @@ endif
 
 ### Rule (compile): a single `.c` -> `.o` (gcc)
 $(DST_DIR)/%.o: %.c
+### mkdir 是 shell 命令，dir 是内置函数。内置函数和变量为了避免被解释成普通字符串，使用时 $() or ${}
+### -c 只编译不链接，$(realpath $<) 将第一个依赖（这种模式和场景下，一般是 c 文件）转写成绝对路径
 	@mkdir -p $(dir $@) && echo + CC $<
 	@$(CC) -std=gnu11 $(CFLAGS) -c -o $@ $(realpath $<)
 
@@ -129,10 +132,13 @@ $(DST_DIR)/%.o: %.S
 	@$(AS) $(ASFLAGS) -c -o $@ $(realpath $<)
 
 ### Rule (recursive make): build a dependent library (am, klib, ...)
+### $(MAKE) 保证子 make 与当前 make 相同的版本，archive 告诉子 make 执行的目标。即递归下去实际要干的活
+### 注意因为会递归潜入到每个 lib 下面去做编译，所以 OBJS 和  ARCHIVE 这些都是会根据实际情况变化的。详见 am/Makefile klib/Makefile 等. 所以 archive 子 make 进程能够灵活处理各模块的编译。例如 LIBS 包含 am klib，这项规则能够分别进入这两个子模块目录下，执行 archive 
 $(LIBS): %:
 	@$(MAKE) -s -C $(AM_HOME)/$* archive
 
 ### Rule (link): objects (`*.o`) and libraries (`*.a`) -> `IMAGE.elf`, the final ELF binary to be packed into image (ld)
+### 这条规则的使用位置隐藏在 scripts/platform/nemu.mk 中的 image target 规则，这条规则将与本文件中的 image:image-dep 发生依赖合并
 $(IMAGE).elf: $(OBJS) am $(LIBS)
 	@echo + LD "->" $(IMAGE_REL).elf
 	@$(LD) $(LDFLAGS) -o $(IMAGE).elf --start-group $(LINKAGE) --end-group
@@ -148,6 +154,8 @@ $(ARCHIVE): $(OBJS)
 ## 6. Miscellaneous
 
 ### Build order control
+### run 目标在 nemu.mk 中有更详细的定义。条件是 image 目标，然后切换目录到 $NEMU_HOME 下， 读取目录下的 Makefile，执行编译 run 目标，并指定 image。这样 NEMU 就能执行交叉编译好的程序代码
+### 事实上，run 目标通过 make -C 跨目录跳转，不断且不受限制地切换到其他目录的 Makefile，以至于最后本 Makefile 其实提供的仅仅是 image，而 run 目标被偷龙换凤之后，由跳转后目录下的 Makefile 重新安排后续操作
 image: image-dep
 archive: $(ARCHIVE)
 image-dep: $(OBJS) am $(LIBS)
@@ -160,8 +168,11 @@ clean:
 .PHONY: clean
 
 ### Clean all sub-projects within depth 2 (and ignore errors)
+### CLEAN_ALL 是一个变量，最终获得包含 Makefile 文件的子目录列表
 CLEAN_ALL = $(dir $(shell find . -mindepth 2 -name Makefile))
+### clean-all 是一个目标，依赖于 $(CLEAN_ALL) clean 等两个目标 
 clean-all: $(CLEAN_ALL) clean
+### 对于 CLEAN_ALL 找到的每个目录，都有一个隐含的目标需要被执行，具体的执行命令定义如下: 递归地执行 make clean 命令，-s 使得 make 在执行命令时不输出错误意外的信息，-C 指定了 make 应该在哪个目录执行
 $(CLEAN_ALL):
 	-@$(MAKE) -s -C $@ clean
 .PHONY: clean-all $(CLEAN_ALL)
