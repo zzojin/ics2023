@@ -56,7 +56,7 @@ IMAGE     = $(abspath $(IMAGE_REL))
 ARCHIVE   = $(WORK_DIR)/build/$(NAME)-$(ARCH).a
 
 ### Collect the files to be linked: object files (`.o`) and libraries (`.a`)
-### SRCS and NAME 都是由客户程序那边的 Makefile 生成的，详见am-kernals/test/cpu-tests/Makefile 
+### SRCS and NAME 都是由客户程序那边的 Makefile 生成的，详见am-kernals/test/cpu-tests/Makefile, am/Makefile 中的 AM_SRCS，后期该变量会整合成 SRCS。所以这个 Makefile 更像是中间的中枢处理站。从各地方的 Makefile 搜集源文件，编译得到 image 和 ARGS 变量，再切到 nemu 目录下编译 nemu 构建 run 目标，nemu 可执行文件执行包含了客户程序和运行时环境代码的镜像
 OBJS      = $(addprefix $(DST_DIR)/, $(addsuffix .o, $(basename $(SRCS))))
 LIBS     := $(sort $(LIBS) am klib) # lazy evaluation ("=") causes infinite recursions
 LINKAGE   = $(OBJS) \
