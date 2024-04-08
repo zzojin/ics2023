@@ -27,7 +27,7 @@ typedef struct {
   vaddr_t halt_pc;
   uint32_t halt_ret;
 } NEMUState;
-
+// nemu_state 实际的定义和初始化在 state.c 
 extern NEMUState nemu_state;
 
 // ----------- timer -----------

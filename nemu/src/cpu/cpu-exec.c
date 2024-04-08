@@ -17,7 +17,9 @@
 #include <cpu/decode.h>
 #include <cpu/difftest.h>
 #include <locale.h>
+#include <stdio.h>
 #include "../monitor/sdb/sdb.h"
+#include "utils.h"
 
 /* The assembly code of instructions executed is only output to the screen
  * when the number of instructions executed is less than this value.
@@ -25,6 +27,11 @@
  * You can modify this value as you want.
  */
 #define MAX_INST_TO_PRINT 10
+#ifdef CONFIG_ITRACE_COND
+#define LOG_CAP 16
+  char iringbuf[LOG_CAP][LOG_LENGTH]; 
+  size_t ringbuf_index = 0;
+#endif
 
 CPU_state cpu = {};
 uint64_t g_nr_guest_inst = 0;
@@ -33,9 +40,25 @@ static bool g_print_step = false;
 
 void device_update();
 
+static void print_iringbuf() {
+#ifdef CONFIG_ITRACE_COND
+    printf("====== The nearest %d instructions ======\n", LOG_CAP);
+    size_t end = ringbuf_index <= LOG_CAP ? ringbuf_index : LOG_CAP;
+    for (int i = 0; i < end; i++) {
+        if (i == (ringbuf_index - 1) % LOG_CAP) {
+            printf(ANSI_FMT("%s\n", ANSI_FG_RED), iringbuf[i]);
+        } else 
+            printf("%s\n", iringbuf[i]);
+    }
+#endif
+}
+
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
+// ITRACE_COND 就是由 CONFIG_ITRACE_COND 推断而来。这个宏的定义在 nemu/Makefile 中。因为 sdb.h common.h stdbool .h 最终 宏定义中的 true 和 false 都能正常被解释成 0 1
 #ifdef CONFIG_ITRACE_COND
   if (ITRACE_COND) { log_write("%s\n", _this->logbuf); }
+  strncpy(iringbuf[ringbuf_index % LOG_CAP], _this->logbuf, LOG_LENGTH);
+  ringbuf_index++;
 #endif
   // 打印指令地址、指令二进制码、反汇编结果
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
@@ -69,7 +92,7 @@ static void exec_once(Decode *s, vaddr_t pc) {
   int ilen = s->snpc - s->pc;
   int i;
  
-  // inst is an union,  val 是 uint32_t
+  // s->isa.inst is an union,  val 是 uint32_t
   uint8_t *inst = (uint8_t *)&s->isa.inst.val;
   // 每次写入 1 个 uint8 类型的变量，即 1 个字节，重复 4 次，刚好是一个 riscv32 指令的长度。用 2 位 16 进制数表示一个 uint8 类型的变量
   for (i = ilen - 1; i >= 0; i --) {
@@ -79,6 +102,7 @@ static void exec_once(Decode *s, vaddr_t pc) {
   int ilen_max = MUXDEF(CONFIG_ISA_x86, 8, 4);
   int space_len = ilen_max - ilen;
   if (space_len < 0) space_len = 0;
+  // 添加空格的数量，保持格式对齐。x86 架构的指令长度是变长的，每个字节需要占用三个字符位置，包括十六进制 2 位和一个空格。此外，反汇编代码和指令二进制之间需要一个空格，所以有额外的 + 1
   space_len = space_len * 3 + 1;
   memset(p, ' ', space_len);
   p += space_len;
@@ -145,6 +169,8 @@ void cpu_exec(uint64_t n) {
            (nemu_state.halt_ret == 0 ? ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN) :
             ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED))),
           nemu_state.halt_pc);
+      if (nemu_state.state == NEMU_ABORT || nemu_state.halt_ret != 0)
+          print_iringbuf();
       // fall through
     case NEMU_QUIT: statistic();
   }
