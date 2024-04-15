@@ -129,8 +129,8 @@ int memcmp(const void *s1, const void *s2, size_t n) {
         if (*p1 != *p2) {
             return (*p1 > *p2) ? 1 : -1;
         }
-        s1++;
-        s2++;
+        p1++;
+        p2++;
     }
     return 0;
 }
