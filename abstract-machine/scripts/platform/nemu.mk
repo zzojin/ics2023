@@ -16,6 +16,7 @@ NEMUFLAGS += -b
 # IMAGE 是绝对路径，定义在 abstract-machine/Makefile. 因此 run 目标执行时切换到 NEMU_HOME 也不会影响后续程序读取 elf 文件
 NEMUFLAGS += -e $(IMAGE).elf
 
+# mainargs 可以从 make 命令行输入，是作为镜像的主函数命令行参数。本操作是把 mainargs Makefile 变量放在宏 MAINARGS 中
 CFLAGS += -DMAINARGS=\"$(mainargs)\"
 CFLAGS += -I$(AM_HOME)/am/src/platform/nemu/include
 .PHONY: $(AM_HOME)/am/src/platform/nemu/trm.c

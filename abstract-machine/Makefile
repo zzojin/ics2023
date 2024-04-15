@@ -59,6 +59,9 @@ ARCHIVE   = $(WORK_DIR)/build/$(NAME)-$(ARCH).a
 ### SRCS and NAME 都是由客户程序那边的 Makefile 生成的，详见am-kernals/test/cpu-tests/Makefile, am/Makefile 中的 AM_SRCS，后期该变量会整合成 SRCS。所以这个 Makefile 更像是中间的中枢处理站。从各地方的 Makefile 搜集源文件，编译得到 image 和 ARGS 变量，再切到 nemu 目录下编译 nemu 构建 run 目标，nemu 可执行文件执行包含了客户程序和运行时环境代码的镜像
 OBJS      = $(addprefix $(DST_DIR)/, $(addsuffix .o, $(basename $(SRCS))))
 LIBS     := $(sort $(LIBS) am klib) # lazy evaluation ("=") causes infinite recursions
+# 包含目标文件以及 am/build 目录下的一个静态库文件 LIB-ARCH.a， LIB=am
+# 以及 klib/build/ 目录下的一个静态库文件 LIB-ARCH.a，这种情况下 LIB=klib 
+# -$(ARCH).a 的连接符，就是用来与最后的 $(LIBS)字符连上构成一个完整的库文件名
 LINKAGE   = $(OBJS) \
   $(addsuffix -$(ARCH).a, $(join \
     $(addsuffix /build/, $(addprefix $(AM_HOME)/, $(LIBS))), \
@@ -81,6 +84,7 @@ INC_PATH += $(WORK_DIR)/include $(addsuffix /include/, $(addprefix $(AM_HOME)/, 
 INCFLAGS += $(addprefix -I, $(INC_PATH))
 
 ARCH_H := arch/$(ARCH).h
+# $(ARCH) 是读取 Makefile 变量，tr a-z A-Z: 小写全都转成大写，-换成下划线
 CFLAGS   += -O2 -MMD -Wall -Werror $(INCFLAGS) \
             -D__ISA__=\"$(ISA)\" -D__ISA_$(shell echo $(ISA) | tr a-z A-Z)__ \
             -D__ARCH__=$(ARCH) -D__ARCH_$(shell echo $(ARCH) | tr a-z A-Z | tr - _) \
@@ -96,6 +100,8 @@ LDFLAGS  += -z noexecstack
 #$(info ARCH is $(ARCH))
 
 ### Paste in arch-specific configurations (e.g., from `scripts/x86_64-qemu.mk`)
+# native.mk 没有引用其他的 mk 文件, 直接定义 run image gdb 等编译目标
+# riscv32-nemu 引用了 nemu.mk and riscv32.mk。编译的目标 run image gdb 等和参数都定义在其中
 -include $(AM_HOME)/scripts/$(ARCH).mk
 
 #$(info CC is $(CC), ARCH is $(ARCH), cross compile is $(CROSS_COMPILE))
