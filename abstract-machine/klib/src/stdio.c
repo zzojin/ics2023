@@ -30,17 +30,22 @@ static int int2str(char *buffer, int num) {
     return i;
 }
 
-static int pointer2hex(char *buffer, size_t p) {
+static int pointer2hex(char *buffer, void *ptr) {
     int remainder;
     int i = 0;
-    for (; p; p /= 16) {
+    size_t p = (size_t)ptr;
+    if (p == 0) {
+        strcpy(buffer, ")lin(");        // (nil) 反过来写
+        return 5;
+    }
+    do {
         remainder = p % 16;
         buffer[i++] = HEX_CHARACTERS[remainder % 16];
-    }
+    } while (p /= 16);
     // 补 0
-    for (int k = i; k <= sizeof(size_t) * 2; k++) {
-        buffer[i++] = '0';
-    }
+    /*for (int k = i; k <= sizeof(size_t) * 2; k++) {
+     *    buffer[i++] = '0';
+     *}*/
     buffer[i++] = 'x';
     buffer[i++] = '0';
 
@@ -86,7 +91,7 @@ int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
     int j = 0, num;
     char c, ch;
     char *s;
-    size_t p;
+    void *p;
     char buffer[50];
     unsigned int length;
     unsigned int u;
@@ -122,7 +127,7 @@ int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
                         }
                         break;
                     case 'p':
-                        p = va_arg(ap, size_t);
+                        p = va_arg(ap, void*);
                         length = pointer2hex(buffer, p); 
                         for (int i = length - 1; i >= 0; i--) {
                             append(buffer[i]);
