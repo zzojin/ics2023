@@ -30,6 +30,21 @@ static int int2str(char *buffer, int num) {
     return i;
 }
 
+static int uint2str(char *buffer, unsigned int num) {
+    
+    if (num == 0) {
+        buffer[0] = '0';
+        return 1;
+    }
+    int i = 0;
+    int remainder;
+    for (; num; num /= 10) {
+        remainder = num % 10;
+        buffer[i++] = HEX_CHARACTERS[remainder % 10];
+    }
+    return i;
+}
+
 static int pointer2hex(char *buffer, void *ptr) {
     int remainder;
     int i = 0;
@@ -89,6 +104,7 @@ int snprintf(char *out, size_t n, const char *fmt, ...) {
 int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
     int state = 0;
     int j = 0, num;
+    unsigned int u_num;
     char c, ch;
     char *s;
     void *p;
@@ -111,6 +127,13 @@ int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
                     case 'd':
                         num = va_arg(ap, int);
                         length = int2str(buffer, num);
+                        for (int i = length - 1; i >= 0; i--) {
+                            append(buffer[i]);
+                        }
+                        break;
+                    case 'u':
+                        u_num = va_arg(ap, unsigned int);
+                        length = uint2str(buffer, u_num);
                         for (int i = length - 1; i >= 0; i--) {
                             append(buffer[i]);
                         }
