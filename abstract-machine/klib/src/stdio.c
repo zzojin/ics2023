@@ -7,14 +7,14 @@
 
 static char HEX_CHARACTERS[] = "0123456789abcdef";
 
-static unsigned int int2str(char *buffer, int num) {
+static int int2str(char *buffer, int num) {
     int neg = 0;
     if (num == 0) {
         buffer[0] = '0';
         return 1;
     } else if (num < 0)
         neg = 1;
-    unsigned int i = 0;
+    int i = 0;
     // 当 num 是负数时，直接给 num 取相反数可能会导致溢出，例如[-256,255] 中的 -256.
     // 因此，求模之后根据余数是否为负数，调整符号
     int remainder;
@@ -30,9 +30,9 @@ static unsigned int int2str(char *buffer, int num) {
     return i;
 }
 
-static unsigned int pointer2hex(char *buffer, size_t p) {
+static int pointer2hex(char *buffer, size_t p) {
     int remainder;
-    unsigned int i = 0;
+    int i = 0;
     for (; p; p /= 16) {
         remainder = p % 16;
         buffer[i++] = HEX_CHARACTERS[remainder % 16];
@@ -47,15 +47,15 @@ static unsigned int pointer2hex(char *buffer, size_t p) {
     return i;
 }
 
-static unsigned int uint2hex(char *buffer, unsigned int u) {
+static int uint2hex(char *buffer, unsigned int u) {
     int remainder;
-    unsigned int i = 0;
-    for (; u; u /= 16) {
+    int i = 0;
+    do {
         remainder = u % 16;
         buffer[i++] = HEX_CHARACTERS[remainder % 16];
-    }
-    buffer[i++] = 'x';
-    buffer[i++] = '0';
+    } while (u /= 16);
+/*    buffer[i++] = 'x';*/
+    /*buffer[i++] = '0';*/
     return i;
 }
 
@@ -80,7 +80,7 @@ int snprintf(char *out, size_t n, const char *fmt, ...) {
     return vsnprintf(out, n, fmt, ap);
 }
 
-#define append(x) {out[j++]=x; if (j >= n) {break;}}
+#define append(x) do {out[j++]=x; } while(0)
 int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
     int state = 0;
     int j = 0, num;
@@ -90,7 +90,7 @@ int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
     char buffer[50];
     unsigned int length;
     unsigned int u;
-    while (c = *fmt++, c) {
+    while (c = *fmt++, c && n > 0 && j < n - 1) {
         switch (state) {
             case 0:
                 if (c == '%')
@@ -124,14 +124,14 @@ int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
                     case 'p':
                         p = va_arg(ap, size_t);
                         length = pointer2hex(buffer, p); 
-                        for (unsigned int i = length - 1; i >= 0; i--) {
+                        for (int i = length - 1; i >= 0; i--) {
                             append(buffer[i]);
                         }
                         break;
                     case 'x':
                         u = va_arg(ap, unsigned int);
                         length = uint2hex(buffer, u); 
-                        for (unsigned int i = length - 1; i >= 0; i--) {
+                        for (int i = length - 1; i >= 0; i--) {
                             append(buffer[i]);
                         }
                         break;
