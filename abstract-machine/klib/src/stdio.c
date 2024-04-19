@@ -79,7 +79,6 @@ static int uint2hex(char *buffer, unsigned int u) {
     return i;
 }
 
-
 int printf(const char *fmt, ...) {
   panic("Not implemented");
 }

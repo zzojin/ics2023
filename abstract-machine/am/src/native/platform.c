@@ -58,6 +58,7 @@ static void setup_sigaltstack() {
 
 int main(const char *args);
 
+// 在 C 和 C++ 程序中，__attribute__((constructor)) 是一个 GCC（GNU Compiler Collection）提供的特性，用于指示标记的函数应在 main() 函数执行之前自动执行。
 static void init_platform() __attribute__((constructor));
 static void init_platform() {
   // create memory object and set up mapping to simulate the physical memory

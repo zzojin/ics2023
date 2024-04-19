@@ -20,7 +20,7 @@
 
 #define IO_SPACE_MAX (2 * 1024 * 1024)
 
-static uint8_t *io_space = NULL;
+static uint8_t *io_space = NULL;                    // 在 init_map 中初始化
 static uint8_t *p_space = NULL;
 
 uint8_t* new_space(int size) {

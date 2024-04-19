@@ -147,7 +147,7 @@ $(LIBS): %:
 ### 这条规则的使用位置隐藏在 scripts/platform/nemu.mk 中的 image target 规则，这条规则将与本文件中的 image:image-dep 发生依赖合并
 $(IMAGE).elf: $(OBJS) am $(LIBS)
 	@echo + LD "->" $(IMAGE_REL).elf
-	@$(LD) $(LDFLAGS) -o $(IMAGE).elf --start-group $(LINKAGE) --end-group
+	@$(LD) $(LDFLAGS) -o $(IMAGE).elf --start-group $(LINKAGE) --end-group #--verbose -L/opt/riscv/sysroot/usr/lib32/ilp32 -lc
 
 ### Rule (archive): objects (`*.o`) -> `ARCHIVE.a` (ar)
 $(ARCHIVE): $(OBJS)
@@ -160,7 +160,7 @@ $(ARCHIVE): $(OBJS)
 ## 6. Miscellaneous
 
 ### Build order control
-### run 目标在 nemu.mk 中有更详细的定义。条件是 image 目标，然后切换目录到 $NEMU_HOME 下， 读取目录下的 Makefile，执行编译 run 目标，并指定 image。这样 NEMU 就能执行交叉编译好的程序代码
+### run 目标在 scripts/platform/nemu.mk 中有更详细的定义。条件是 image 目标，然后切换目录到 $NEMU_HOME 下， 读取目录下的 Makefile，执行编译 run 目标，并指定 image。这样 NEMU 就能执行交叉编译好的程序代码
 ### 事实上，run 目标通过 make -C 跨目录跳转，不断且不受限制地切换到其他目录的 Makefile，以至于最后本 Makefile 其实提供的仅仅是 image，而 run 目标被偷龙换凤之后，由跳转后目录下的 Makefile 重新安排后续操作
 image: image-dep
 archive: $(ARCHIVE)

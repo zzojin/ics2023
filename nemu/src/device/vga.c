@@ -77,12 +77,13 @@ void vga_update_screen() {
 }
 
 void init_vga() {
-  vgactl_port_base = (uint32_t *)new_space(8);
-  vgactl_port_base[0] = (screen_width() << 16) | screen_height();
+  vgactl_port_base = (uint32_t *)new_space(8);      // new space 返回的是端口内存的起始地址
+  vgactl_port_base[0] = (screen_width() << 16) | screen_height();   // 第一个存储屏幕长宽，高位存 w，低 16 位 存 h
+// 端口映射或内存映射                                                               
 #ifdef CONFIG_HAS_PORT_IO
-  add_pio_map ("vgactl", CONFIG_VGA_CTL_PORT, vgactl_port_base, 8, NULL);
+  add_pio_map ("vgactl", CONFIG_VGA_CTL_PORT, vgactl_port_base, 8, NULL);   // 0x100，port addr of vga controller
 #else
-  add_mmio_map("vgactl", CONFIG_VGA_CTL_MMIO, vgactl_port_base, 8, NULL);
+  add_mmio_map("vgactl", CONFIG_VGA_CTL_MMIO, vgactl_port_base, 8, NULL);   // mmio addr of vga controller device/Kconfig 0xa0000100
 #endif
 
   vmem = new_space(screen_size());
