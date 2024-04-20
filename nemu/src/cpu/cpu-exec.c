@@ -42,8 +42,6 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 // ITRACE_COND 就是由 CONFIG_ITRACE_COND 推断而来。这个宏的定义在 nemu/Makefile 中。因为 sdb.h common.h stdbool .h 最终 宏定义中的 true 和 false 都能正常被解释成 0 1
 #ifdef CONFIG_ITRACE_COND
   if (ITRACE_COND) { log_write("%s\n", _this->logbuf); }
-/*  strncpy(iringbuf[ringbuf_index % LOG_CAP], _this->logbuf, LOG_LENGTH);*/
-  /*ringbuf_index++;*/
 #endif
   // 打印指令地址、指令二进制码、反汇编结果
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
@@ -51,7 +49,7 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_WATCHPOINT
   bool changed = check_wp();
   if (changed) {
-      Log("hit watchpoint, pc is %x", cpu.pc);
+      Log("hit watchpoint, pc is %x", _this->pc);
       if (nemu_state.state == NEMU_RUNNING)
         nemu_state.state = NEMU_STOP;
   }
@@ -64,7 +62,6 @@ static void exec_once(Decode *s, vaddr_t pc) {
   // 匹配并执行指令，更新 snpc 和 dnpc
   isa_exec_once(s);
   cpu.pc = s->dnpc;
-  
   
   // 如果定义了追踪，还会记录每次执行的指令的二进制以及其反汇编代码
 #ifdef CONFIG_ITRACE
@@ -151,7 +148,7 @@ void cpu_exec(uint64_t n) {
     case NEMU_RUNNING: nemu_state.state = NEMU_STOP; break;
 
     case NEMU_END: case NEMU_ABORT:
-      if (1 || nemu_state.halt_ret != 0) {
+      if (nemu_state.halt_ret != 0) {
           IFDEF(CONFIG_ITRACE, display_inst());
           IFDEF(CONFIG_FTRACE, print_func_stack());
       }

@@ -24,11 +24,9 @@
 typedef struct watchpoint {
   int NO;
   struct watchpoint *next;
-
-  /* TODO: Add more members if necessary */
   char exp[NR_EXP];
   word_t old_value;
-  int initialized;
+  bool initialized;
 } WP;
 
 static WP wp_pool[NR_WP] = {};
@@ -56,8 +54,7 @@ void new_wp(char *exp) {
     head->next = head_next;
 
     // initialize
-    head->old_value = 0;
-    head->initialized = 0;
+    head->initialized = 0; 
     strncpy(head->exp, exp, NR_EXP);
 }
 
@@ -101,7 +98,7 @@ bool check_wp() {
     bool success = true;
     char old_value[100];
     char new_value[100];
-    while (cur != NULL) {
+    while (cur) {
         word_t res = expr(cur->exp, &success);
         if (!success) {
             Log("watchpoint %d compute expression wrong", cur->NO);
@@ -114,8 +111,8 @@ bool check_wp() {
             snprintf(new_value, sizeof(new_value), "%u/0x%X", res, res);
             printf("%-10d%-50s%-30s%-30s\n", cur->NO, cur->exp, old_value, new_value);
             changed = true;
-            cur->initialized = true;
             cur->old_value = res;
+            cur->initialized = true;
         }
         cur = cur->next;
     }
