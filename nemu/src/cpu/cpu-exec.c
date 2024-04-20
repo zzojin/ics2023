@@ -29,11 +29,6 @@
  * You can modify this value as you want.
  */
 #define MAX_INST_TO_PRINT 10
-/*#ifdef CONFIG_ITRACE_COND*/
-/*#define LOG_CAP 16*/
-/*  char iringbuf[LOG_CAP][LOG_LENGTH]; */
-/*  size_t ringbuf_index = 0;*/
-/*#endif*/
 
 CPU_state cpu = {};
 uint64_t g_nr_guest_inst = 0;
@@ -42,19 +37,6 @@ static bool g_print_step = false;
 
 void device_update();
 void display_inst();
-
-/*#ifdef CONFIG_ITRACE_COND*/
-/*static void print_iringbuf() {*/
-/*    printf("====== The nearest %d instructions ======\n", LOG_CAP);*/
-/*    size_t end = ringbuf_index <= LOG_CAP ? ringbuf_index : LOG_CAP;*/
-/*    for (int i = 0; i < end; i++) {*/
-/*        if (i == (ringbuf_index - 1) % LOG_CAP) {*/
-/*            printf(ANSI_FMT("%s\n", ANSI_FG_RED), iringbuf[i]);*/
-/*        } else */
-/*            printf("%s\n", iringbuf[i]);*/
-/*    }*/
-/*}*/
-/*#endif*/
 
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 // ITRACE_COND 就是由 CONFIG_ITRACE_COND 推断而来。这个宏的定义在 nemu/Makefile 中。因为 sdb.h common.h stdbool .h 最终 宏定义中的 true 和 false 都能正常被解释成 0 1
@@ -143,6 +125,7 @@ static void statistic() {
 
 void assert_fail_msg() {
   IFDEF(CONFIG_ITRACE, display_inst());
+  IFDEF(CONFIG_FTRACE, print_func_stack());
   isa_reg_display();
   statistic();
 }
@@ -168,14 +151,9 @@ void cpu_exec(uint64_t n) {
     case NEMU_RUNNING: nemu_state.state = NEMU_STOP; break;
 
     case NEMU_END: case NEMU_ABORT:
-      if (nemu_state.halt_ret != 0) {
-         /* #ifdef CONFIG_ITRACE*/
-              /*print_iringbuf();*/
-          /*#endif*/
+      if (1 || nemu_state.halt_ret != 0) {
           IFDEF(CONFIG_ITRACE, display_inst());
-          #ifdef CONFIG_FTRACE
-              print_func_stack();
-          #endif
+          IFDEF(CONFIG_FTRACE, print_func_stack());
       }
       Log("nemu: %s at pc = " FMT_WORD,
           (nemu_state.state == NEMU_ABORT ? ANSI_FMT("ABORT", ANSI_FG_RED) :

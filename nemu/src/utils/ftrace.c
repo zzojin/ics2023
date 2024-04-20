@@ -24,13 +24,15 @@ typedef struct fnode {
     struct fnode *next;
     vaddr_t pc;
     vaddr_t target_addr;
+    int call_depth;
 } fnode;
 
 static finfo funcs[102400];
 static unsigned int ind = 0;
+static int call_depth = 0;
 static fnode* func_stack_head = NULL;
 static fnode* func_stack_tail = NULL;
-static const char *action_type[] = {"Call", "Ret"};
+static const char *action_type[] = {"Call", "Ret "};
 
 void init_elf(const char* elf_file) {
     if (elf_file == NULL) {
@@ -90,6 +92,15 @@ void append(vaddr_t cur, vaddr_t target_addr, int dst_index, const char *type) {
     newnode->target_addr = target_addr;
     newnode->next = NULL;
 
+    if (type == action_type[0]) {
+        newnode->call_depth = call_depth;
+        call_depth += 2;
+    } else {
+        call_depth -= 2;
+        newnode->call_depth = call_depth;
+    }
+    Assert(call_depth >= 0, "function call depth less than 0, something wrong");
+
     if (func_stack_head == NULL) {
         func_stack_head = newnode;
         func_stack_tail = func_stack_head;
@@ -101,19 +112,21 @@ void append(vaddr_t cur, vaddr_t target_addr, int dst_index, const char *type) {
 
 void process_jal(int rd, vaddr_t cur, vaddr_t dst) {
     int dst_index = which_func(dst);
-    if (rd == 1 && dst_index >= 0 && dst == funcs[dst_index].addr) {
+    if (rd == 1 && dst_index >= 0) {
         append(cur, dst, dst_index, action_type[0]);
     }
 }
 
+/* 当某个函数的 return 语句内容是一个函数调用时，编译器会把这个函数的返回优化掉，返回地址直接设为 x0，称为尾调用
+ * TODO: 参考 https://www.cnblogs.com/nosae/p/17066439.html#%E5%AE%9E%E7%8E%B0ftrace，完成尾调用的补充
+ * */
 void process_jalr(int rd, word_t inst_val, vaddr_t cur, vaddr_t dst, word_t imm) {
     int dst_index = which_func(dst);
     if (dst_index < 0)
         return;
     if (inst_val == 0x00008067) {
-        append(cur, dst, dst_index, action_type[1]);
-    }
-    else if (rd == 1 && imm == 0 && dst == funcs[dst_index].addr) { 
+        append(cur, dst, dst_index, action_type[1]);         // ret -> jalr x0, 0(x1=ra) 
+    } else if (rd == 1) {                                      // dst == funcs[dst_index].addr 条件可以省略
         append(cur, dst, dst_index, action_type[0]);
     }
 }
@@ -122,7 +135,16 @@ void print_func_stack() {
     printf("=========== The function stack ===========\n");
     fnode *temp = func_stack_head;
     while (temp != NULL) {
-        printf("%x: in %-25s, %s [%x@%s]\n", temp->pc, temp->cur_func->name, temp->type, temp->target_addr, temp->dst_func->name);
+        printf("%x: %*s%s [%s@%x]\n", temp->pc, temp->call_depth, "", temp->type, temp->dst_func->name, temp->target_addr);
         temp = temp->next;
     }
 }
+
+/*void print_func_stack() {*/
+    /*printf("=========== The function stack ===========\n");*/
+    /*fnode *temp = func_stack_head;*/
+    /*while (temp != NULL) {*/
+    /*    printf("%x: in %-25s, %s [%x@%s]\n", temp->pc, temp->cur_func->name, temp->type, temp->target_addr, temp->dst_func->name);*/
+    /*    temp = temp->next;*/
+    /*}*/
+/*}*/

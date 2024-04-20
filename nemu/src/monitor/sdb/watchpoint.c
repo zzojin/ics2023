@@ -45,8 +45,6 @@ void init_wp_pool() {
   free_ = wp_pool;
 }
 
-/* TODO: Implement the functionality of watchpoint */
-
 void new_wp(char *exp) {
     if (free_ == NULL) {
         Log("there is no free watchpoint, %d all used", NR_WP);
