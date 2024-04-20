@@ -30,6 +30,8 @@
 #define Mr vaddr_read
 #define Mw vaddr_write
 
+void trace_inst(word_t pc, uint32_t inst);
+
 enum {
   TYPE_R, TYPE_I, TYPE_U, TYPE_S, TYPE_J, TYPE_B,
   TYPE_N, // none
@@ -124,8 +126,8 @@ static int decode_exec(Decode *s) {
   INSTPAT("0000001 ????? ????? 011 ????? 01100 11", mulhu  , R, R(rd) = (uint32_t)(((uint64_t)src1 * (uint64_t)src2) >> 32));
   // src2 会进行无符号扩展，提升至 64 位
   INSTPAT("0000001 ????? ????? 010 ????? 01100 11", mulhsu , R, R(rd) = (int32_t)(((int64_t)src1 * src2) >> 32));
-  INSTPAT("0000001 ????? ????? 100 ????? 01100 11", div    , R, R(rd) = (int32_t)src1 / (int32_t)src2);
-  INSTPAT("0000001 ????? ????? 101 ????? 01100 11", divu   , R, R(rd) = src1 / src2);
+  //INSTPAT("0000001 ????? ????? 100 ????? 01100 11", div    , R, R(rd) = (int32_t)src1 / (int32_t)src2);
+  //INSTPAT("0000001 ????? ????? 101 ????? 01100 11", divu   , R, R(rd) = src1 / src2);
   INSTPAT("0000001 ????? ????? 110 ????? 01100 11", rem    , R, R(rd) = (int32_t)src1 % (int32_t)src2);
   INSTPAT("0000001 ????? ????? 111 ????? 01100 11", remu   , R, R(rd) = src1 % src2);
 
@@ -158,6 +160,6 @@ int isa_exec_once(Decode *s) {
   // riscv32 指令集长度固定，总是为 4 个字节，因此每执行一条指令，下一条指令的地址都在当前基础上加 4. 代码跳转的特殊情况例外。
   // 更新 snpc, +4
   s->isa.inst.val = inst_fetch(&s->snpc, 4);
-  // TODO: 译码，更新 dnpc = snpc, 但是在 decode_exec() 中我只简单看到用 snpc 对 dnpc 赋值，如果遇到指令跳转的情况，这就有问题了，不过现在还没有实现跳转指令。
+  IFDEF(CONFIG_ITRACE, trace_inst(s->pc, s->isa.inst.val));
   return decode_exec(s);
 }
