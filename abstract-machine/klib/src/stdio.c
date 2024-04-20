@@ -80,7 +80,12 @@ static int uint2hex(char *buffer, unsigned int u) {
 }
 
 int printf(const char *fmt, ...) {
-  panic("Not implemented");
+    char buffer[4096];
+    va_list ap;
+    va_start(ap, fmt);
+    int done = vsprintf(buffer, fmt, ap);
+    putstr(buffer);
+    return done;
 }
 
 int vsprintf(char *out, const char *fmt, va_list ap) {

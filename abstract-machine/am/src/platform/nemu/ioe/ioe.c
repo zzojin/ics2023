@@ -24,6 +24,7 @@ static void __am_uart_config(AM_UART_CONFIG_T *cfg)   { cfg->present = false; }
 static void __am_net_config (AM_NET_CONFIG_T *cfg)    { cfg->present = false; }
 
 typedef void (*handler_t)(void *buf);
+// lut 存储函数指针，void * 可以存储任意类型的函数指针。C99 指定初始化器特性：[index] = 初始值
 static void *lut[128] = {
   [AM_TIMER_CONFIG] = __am_timer_config,
   [AM_TIMER_RTC   ] = __am_timer_rtc,
@@ -48,7 +49,7 @@ static void fail(void *buf) { panic("access nonexist register"); }
 
 bool ioe_init() {
   for (int i = 0; i < LENGTH(lut); i++)
-    if (!lut[i]) lut[i] = fail;
+    if (!lut[i]) lut[i] = fail;         // 空的数组元素赋值 fail
   __am_gpu_init();
   __am_timer_init();
   __am_audio_init();

@@ -41,8 +41,8 @@ static bool g_print_step = false;
 
 void device_update();
 
-static void print_iringbuf() {
 #ifdef CONFIG_ITRACE_COND
+static void print_iringbuf() {
     printf("====== The nearest %d instructions ======\n", LOG_CAP);
     size_t end = ringbuf_index <= LOG_CAP ? ringbuf_index : LOG_CAP;
     for (int i = 0; i < end; i++) {
@@ -51,8 +51,8 @@ static void print_iringbuf() {
         } else 
             printf("%s\n", iringbuf[i]);
     }
-#endif
 }
+#endif
 
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 // ITRACE_COND 就是由 CONFIG_ITRACE_COND 推断而来。这个宏的定义在 nemu/Makefile 中。因为 sdb.h common.h stdbool .h 最终 宏定义中的 true 和 false 都能正常被解释成 0 1

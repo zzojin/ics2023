@@ -56,11 +56,14 @@ word_t map_read(paddr_t addr, int len, IOMap *map) {
   assert(len >= 1 && len <= 8);
   check_bound(map, addr);
   paddr_t offset = addr - map->low;
-  invoke_callback(map->callback, offset, len, false); // prepare data to read
+  invoke_callback(map->callback, offset, len, false); // is_write = false 表明是读操作，prepare data to read
   word_t ret = host_read(map->space + offset, len);
   return ret;
 }
 
+// paddr_write(只要开启 CONFIG_DEVICE,每次往内存写都要尝试往设备写)
+// -> mmio_write(find hardware map) -> map_write -> callback -> handler func(eg. serial_io_handler) 
+// addr 就是写入的内存地址，data 就是往内存写入的数据。如果地址位于设备内存区间，找出该设备，并继续调用 mmio_write -> map_write. map_write 会往 space 再次写入，callback 函数操作数据时会使用 space 区域的这一份。space 可以理解成设备内部的寄存器，不属于内存的范畴
 void map_write(paddr_t addr, int len, word_t data, IOMap *map) {
   assert(len >= 1 && len <= 8);
   check_bound(map, addr);
