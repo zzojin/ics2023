@@ -1,4 +1,5 @@
 #include "debug.h"
+#include "utils.h"
 #include <common.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -132,10 +133,10 @@ void process_jalr(int rd, word_t inst_val, vaddr_t cur, vaddr_t dst, word_t imm)
 }
 
 void print_func_stack() {
-    printf("=========== The function stack ===========\n");
+    log_write("=========== The function stack ===========\n");
     fnode *temp = func_stack_head;
     while (temp != NULL) {
-        printf("%x: %*s%s [%s@%x]\n", temp->pc, temp->call_depth, "", temp->type, temp->dst_func->name, temp->target_addr);
+        log_write("%x: %*s%s [%s@%x]\n", temp->pc, temp->call_depth, "", temp->type, temp->dst_func->name, temp->target_addr);
         temp = temp->next;
     }
 }

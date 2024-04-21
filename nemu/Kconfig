@@ -161,6 +161,11 @@ config FTRACE
   bool "Enable function tracer"
   default n
 
+config DTRACE
+  depends on TRACE
+  bool "Enable device trace"
+  default n
+
 config WATCHPOINT
   depends on TRACE
   bool "Enable watchpoint"
