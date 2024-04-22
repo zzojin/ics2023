@@ -24,7 +24,7 @@ void __am_gpu_config(AM_GPU_CONFIG_T *cfg) {
   uint32_t w_h = inl(VGACTL_ADDR);
   cfg->width = (int)(w_h >> 16);
   cfg->height = (int) (w_h & 0xffff);
-  cfg->vmemsz = 0; //cfg->height * cfg->width * sizeof(uint32_t);
+  cfg->vmemsz = cfg->height * cfg->width * sizeof(uint32_t);
 }
 
 // 客户程序构造 AM_GPU_FBDRAW_T 结构体，调用 __am_gpu_fbdraw 完成对显存的修改.进而 NEMU 每次 CPU 执行完之后调用 vga_update_screen，完成硬件显示
