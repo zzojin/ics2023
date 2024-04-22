@@ -29,16 +29,16 @@ void __am_gpu_config(AM_GPU_CONFIG_T *cfg) {
 
 // 客户程序构造 AM_GPU_FBDRAW_T 结构体，调用 __am_gpu_fbdraw 完成对显存的修改.进而 NEMU 每次 CPU 执行完之后调用 vga_update_screen，完成硬件显示
 void __am_gpu_fbdraw(AM_GPU_FBDRAW_T *ctl) {
-  /*int x = ctl->x, y = ctl->y, w = ctl->w, h = ctl->h;
-   *if (!ctl->sync && (w == 0 || h == 0)) return;
-   *uint32_t *pixels = ctl->pixels;
-   *uint32_t *fb = (uint32_t *)(uintptr_t)FB_ADDR;        // FB_ADDR 的原始数值是定义在 nemu.h 的一个宏，并不是一个地址，所以先转成地址，然后再赋予地址类型
-   *uint32_t screen_w = inl(VGACTL_ADDR) >> 16;
-   *for (int i = y; i < y+h; i++) {
-   *  for (int j = x; j < x+w; j++) {
-   *    fb[screen_w*i+j] = pixels[w*(i-y)+(j-x)];
-   *  }
-   *}*/
+  int x = ctl->x, y = ctl->y, w = ctl->w, h = ctl->h;
+  if (!ctl->sync && (w == 0 || h == 0)) return;
+  uint32_t *pixels = ctl->pixels;
+  uint32_t *fb = (uint32_t *)(uintptr_t)FB_ADDR;        // FB_ADDR 的原始数值是定义在 nemu.h 的一个宏，并不是一个地址，所以先转成地址，然后再赋予地址类型
+  uint32_t screen_w = inl(VGACTL_ADDR) >> 16;
+  for (int i = y; i < y+h; i++) {
+    for (int j = x; j < x+w; j++) {
+      fb[screen_w*i+j] = pixels[w*(i-y)+(j-x)];
+    }
+  }
   if (ctl->sync) {
     outl(SYNC_ADDR, 1);
   }

@@ -63,6 +63,7 @@ static inline void update_screen() {
   SDL_RenderPresent(renderer);
 }
 #else
+// AM_TARGET
 static void init_screen() {}
 
 static inline void update_screen() {
