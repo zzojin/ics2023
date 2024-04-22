@@ -19,6 +19,7 @@ void trace_inst(word_t pc, uint32_t inst) {
 }
 
 void display_inst() {
+#ifdef CONFIG_ITRACE    
   if (!full && !p_cur) return;
 
   int end = p_cur;
@@ -38,4 +39,6 @@ void display_inst() {
     puts(buf);
   } while ((i = (i+1)%MAX_IRINGBUF) != end);
   puts(ANSI_NONE);
+#endif
 }
+
