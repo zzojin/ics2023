@@ -21,7 +21,10 @@
 
 static IOMap maps[NR_MAP] = {};
 static int nr_map = 0;
+
+#ifdef CONFIG_DTRACE
 static const char *action[] = {"read", "write"};
+#endif
 
 static IOMap* fetch_mmio_map(paddr_t addr, int action_type) {
   int mapid = find_mapid_by_addr(maps, nr_map, addr);

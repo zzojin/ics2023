@@ -13,18 +13,21 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
-#include "debug.h"
-#include "sdb.h"
-#include <stdio.h>
-#include <string.h>
+/*#include "debug.h"
+ *#include "sdb.h"
+ *#include <stdio.h>
+ *#include <string.h>*/
+#include <isa.h>
 
 #define NR_WP 32
 #define NR_EXP 100
 
+word_t expr(char *e, bool *success);
+
 typedef struct watchpoint {
   int NO;
   struct watchpoint *next;
-  char exp[NR_EXP];
+  char exp[NR_EXP + 1];
   word_t old_value;
   bool initialized;
 } WP;
