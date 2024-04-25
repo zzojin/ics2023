@@ -40,14 +40,17 @@ f(30) f(31)
 .align 3
 .globl __am_asm_trap
 __am_asm_trap:
+  # 开辟新的栈空间，容纳待保存的 32 个通用寄存器（不包括 sp 寄存器和 x0 寄存器），以及 3 个 csr 寄存器
   addi sp, sp, -CONTEXT_SIZE
-
+  # 通用寄存器压栈。这份汇编代码会先用 C 语言的预处理器处理宏，然后再进行编译工作，所以能够使用 C 语言的宏定义方式
   MAP(REGS, PUSH)
-
+  
+  # 将 csr 拷贝到通用寄存器，不能直接操作 csr 压栈
   csrr t0, mcause
   csrr t1, mstatus
   csrr t2, mepc
-
+  
+  # 压入控制与状态寄存器
   STORE t0, OFFSET_CAUSE(sp)
   STORE t1, OFFSET_STATUS(sp)
   STORE t2, OFFSET_EPC(sp)
@@ -56,10 +59,14 @@ __am_asm_trap:
   li a0, (1 << 17)
   or t1, t1, a0
   csrw mstatus, t1
-
+  
+  # 在调用异常处理函数之前，把 sp 传递给 a0 寄存器。a0 将作为异常处理函数的参数，可以基于 a0 访问栈内保存的各种寄存器值和其他重要状态 
+  # 很显然，这个 sp 的数值保存到 a0 中是给 am_irq_handle 做入参，刚好是一个 Context 变量的地址
   mv a0, sp
+  # 已经保存了异常处理程序执行之前所有的上下文，现在跳转到位于 AM 的异常处理程序
   jal __am_irq_handle
 
+  # 异常处理结束，弹栈恢复异常出现之前的上下文
   LOAD t1, OFFSET_STATUS(sp)
   LOAD t2, OFFSET_EPC(sp)
   csrw mstatus, t1

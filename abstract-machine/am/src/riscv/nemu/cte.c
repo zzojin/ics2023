@@ -2,15 +2,23 @@
 #include <riscv/riscv.h>
 #include <klib.h>
 
+#define Machine_Software_Interrupt (11)
+#define User_Software_Interrupt (8)
+
 static Context* (*user_handler)(Event, Context*) = NULL;
 
+// trap.S 跳转过来. irq:interrupt request
 Context* __am_irq_handle(Context *c) {
   if (user_handler) {
     Event ev = {0};
     switch (c->mcause) {
-      default: ev.event = EVENT_ERROR; break;
+        case Machine_Software_Interrupt: 
+            if (c->GPR1 == -1) { ev.event = EVENT_YIELD; break; }     // 可以观察到 yield 函数发起的 NO 就是 -1，并保存在 a7 寄存器.注意这个数不是异常码，更像是一种事件编号，系统调用编号等。
+            ev.event = EVENT_ERROR; break;
+        default:
+            ev.event = EVENT_ERROR;
     }
-
+    // 事件分发，交由 trap 处理函数，什么样的事件就执行对应的处理函数
     c = user_handler(ev, c);
     assert(c != NULL);
   }
@@ -22,7 +30,7 @@ extern void __am_asm_trap(void);
 
 bool cte_init(Context*(*handler)(Event, Context*)) {
   // initialize exception entry
-  asm volatile("csrw mtvec, %0" : : "r"(__am_asm_trap));
+  asm volatile("csrw mtvec, %0" : : "r"(__am_asm_trap));        // 把 trap.S __am_asm_trap 函数的地址写到 mtvec 寄存器
 
   // register event handler
   user_handler = handler;
