@@ -49,7 +49,7 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_WATCHPOINT
   bool changed = check_wp();
   if (changed) {
-      Log("hit watchpoint, pc is %x", _this->pc);
+      Log("hit watchpoint, pc is 0x%x, next pc is 0x%x", _this->pc, dnpc);
       if (nemu_state.state == NEMU_RUNNING)
         nemu_state.state = NEMU_STOP;
   }

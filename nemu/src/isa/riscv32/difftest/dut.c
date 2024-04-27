@@ -26,13 +26,19 @@
  *};*/
 
 bool isa_difftest_checkregs(CPU_state *ref_r, vaddr_t pc) {
+    bool ret = true;
     for (int i = 0; i < 32; i++) {
         if (ref_r->gpr[i] != cpu.gpr[i]) {
             Log("At [%x]: [%s]reg: expceted %x, but got %x\n", pc, reg_name(i), ref_r->gpr[i], cpu.gpr[i]);
-            return false;
+            ret = false;
         }
     }
-    return true;
+    if (ref_r->pc != cpu.pc){
+        ret =false;
+        Log("At [%x]: [pc]reg: expceted %x, but got %x\n", pc, ref_r->pc, cpu.pc);
+    }
+
+    return ret;
 }
 
 void isa_difftest_attach() {
