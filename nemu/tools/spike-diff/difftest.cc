@@ -13,6 +13,7 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
+#include "decode.h"
 #include "mmu.h"
 #include "sim.h"
 #include "../../include/common.h"
@@ -39,6 +40,10 @@ static debug_module_config_t difftest_dm_config = {
 struct diff_context_t {
   word_t gpr[MUXDEF(CONFIG_RVE, 16, 32)];
   word_t pc;
+  word_t mcause;
+  vaddr_t mepc;
+  word_t mstatus;
+  word_t mtvec;
 };
 
 static sim_t* s = NULL;
@@ -60,6 +65,10 @@ void sim_t::diff_get_regs(void* diff_context) {
     ctx->gpr[i] = state->XPR[i];
   }
   ctx->pc = state->pc;
+  ctx->mstatus = (word_t)state->mstatus->read();
+  ctx->mcause = (word_t)state->mcause->read();
+  ctx->mtvec = (vaddr_t)state->mtvec->read();
+  ctx->mepc = (word_t)state->mepc->read();
 }
 
 void sim_t::diff_set_regs(void* diff_context) {
@@ -68,6 +77,10 @@ void sim_t::diff_set_regs(void* diff_context) {
     state->XPR.write(i, (sword_t)ctx->gpr[i]);
   }
   state->pc = ctx->pc;
+  state->mstatus->write((reg_t)ctx->mstatus);
+  state->mcause->write((reg_t)ctx->mcause);
+  state->mtvec->write((reg_t)ctx->mtvec);
+  state->mepc->write((reg_t)ctx->mepc);
 }
 
 void sim_t::diff_memcpy(reg_t dest, void* src, size_t n) {

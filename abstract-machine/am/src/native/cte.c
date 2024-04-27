@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <sys/time.h>
 #include <string.h>
 #include "platform.h"
@@ -92,6 +93,7 @@ static void iret(ucontext_t *uc) {
 static void sig_handler(int sig, siginfo_t *info, void *ucontext) {
   thiscpu->ev = (Event) {0};
   thiscpu->ev.event = EVENT_ERROR;
+  printf("sig %d\n", sig);
   switch (sig) {
     case SIGUSR1: thiscpu->ev.event = EVENT_IRQ_IODEV; break;
     case SIGUSR2: thiscpu->ev.event = EVENT_YIELD; break;
@@ -116,6 +118,7 @@ static void sig_handler(int sig, siginfo_t *info, void *ucontext) {
       }
       break;
   }
+  printf("thiscpu event %d\n", thiscpu->ev.event);
 
   if (thiscpu->ev.event == EVENT_ERROR) {
     thiscpu->ev.ref = (uintptr_t)info->si_addr;
