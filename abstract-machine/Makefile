@@ -147,6 +147,7 @@ $(LIBS): %:
 ### 这条规则的使用位置隐藏在 scripts/platform/nemu.mk 中的 image target 规则，这条规则将与本文件中的 image:image-dep 发生依赖合并
 $(IMAGE).elf: $(OBJS) am $(LIBS)
 	@echo + LD "->" $(IMAGE_REL).elf
+	@echo "Linking flags: $(LDFLAGS)"
 	@$(LD) $(LDFLAGS) -o $(IMAGE).elf --start-group $(LINKAGE) --end-group #--verbose -L/opt/riscv/sysroot/usr/lib32/ilp32 -lc
 
 ### Rule (archive): objects (`*.o`) -> `ARCHIVE.a` (ar)
