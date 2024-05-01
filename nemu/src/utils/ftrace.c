@@ -101,6 +101,7 @@ void append(vaddr_t cur, vaddr_t target_addr, int dst_index, const char *type) {
         newnode->call_depth = call_depth;
     }
     Assert(call_depth >= 0, "function call depth less than 0, something wrong");
+    IFDEF(CONFIG_FTRACE, log_write("[ftrace] %x: %*s%s [%s@%x]\n", newnode->pc, newnode->call_depth, "", newnode->type, newnode->dst_func->name, newnode->target_addr));
 
     if (func_stack_head == NULL) {
         func_stack_head = newnode;

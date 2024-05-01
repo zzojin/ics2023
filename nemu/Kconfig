@@ -166,6 +166,11 @@ config DTRACE
   bool "Enable device trace"
   default n
 
+config ETRACE
+  depends on TRACE
+  bool "Enable exception trace"
+  default n
+
 config WATCHPOINT
   depends on TRACE
   bool "Enable watchpoint"
