@@ -20,6 +20,14 @@ Context* __am_irq_handle(Context *c) {
     }
     // 事件分发，交由 trap 处理函数，什么样的事件就执行对应的处理函数
     c = user_handler(ev, c);
+    // mepc 修改，大多数情况是继续执行自陷指令的下一条指令
+    switch (ev.event) {
+        case EVENT_PAGEFAULT:
+        case EVENT_ERROR:
+            break;
+        default:
+            c->mepc += 4;
+    }
     assert(c != NULL);
   }
 
