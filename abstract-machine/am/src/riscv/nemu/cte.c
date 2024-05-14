@@ -7,14 +7,14 @@
 
 static Context* (*user_handler)(Event, Context*) = NULL;
 
-// trap.S 跳转过来. irq:interrupt request
+// trap.S 跳转过来. irq:interrupt request 
 Context* __am_irq_handle(Context *c) {
   if (user_handler) {
     Event ev = {0};
     switch (c->mcause) {
         case Machine_Software_Interrupt: 
             if (c->GPR1 == -1) { ev.event = EVENT_YIELD; break; }     // 可以观察到 yield 函数发起的 NO 就是 -1，并保存在 a7 寄存器.注意这个数不是异常码，更像是一种事件编号，系统调用编号等。
-            ev.event = EVENT_ERROR; break;
+            else { ev.event = EVENT_SYSCALL; break; }
         default:
             ev.event = EVENT_ERROR;
     }
