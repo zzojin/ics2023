@@ -4,7 +4,7 @@
 #include "am.h"
 #include "debug.h"
 
-#define CONFIG_STRACE
+//#define CONFIG_STRACE
 // 宏定义的内部不能出现其他预处理指令, 宏不能被其他预处理指令中断
 /*#ifdef CONFIG_STRACE*/
 /*#define TRACE_CALL(func, a, ret) strace(func, a, ret)*/
@@ -31,6 +31,24 @@ static uintptr_t sys_yield(uintptr_t *a) {
     return 0;
 }
 
+static uintptr_t sys_write(uintptr_t *a) {
+    int fd = a[1];
+    char *buf = (char *)a[2];
+    size_t cnt = a[3];
+    size_t num = cnt;
+    // 标准输出和标准错误
+    if (fd == 1 || fd == 2) {
+        while (cnt) {
+            putch(*(buf++));
+            cnt--;
+        }
+        return num - cnt;
+    }
+    // 输出到文件
+    //return fs_write(fd, buf, cnt);
+    return num - cnt;
+}
+
 void do_syscall(Context *c) {
   uintptr_t a[4];
   a[0] = c->GPR1;               // 系统调用号, a7 寄存器
@@ -41,6 +59,7 @@ void do_syscall(Context *c) {
   switch (a[0]) {
       SYSCALL_CASE(exit);
       SYSCALL_CASE(yield);
+      SYSCALL_CASE(write);
       default: panic("Unhandled syscall ID = %d", a[0]);
   }
 }
