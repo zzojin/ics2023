@@ -8,13 +8,15 @@ AM_SRCS := platform/nemu/trm.c \
            platform/nemu/mpe.c
 
 CFLAGS    += -fdata-sections -ffunction-sections
+# -T 指定链接器使用的链接器脚本文件，--defsym 定义符号
 LDFLAGS   += -T $(AM_HOME)/scripts/linker.ld \
              --defsym=_pmem_start=0x80000000 --defsym=_entry_offset=0x0
-LDFLAGS   += --gc-sections -e _start
+# 指定程序入口点是 _start, 并且启用垃圾回收功能，从而移出未被任何部分引用的代码和数据段，可缩减最终二进制文件大小
+LDFLAGS   += --gc-sections -e _start   
 NEMUFLAGS += -l $(shell dirname $(IMAGE).elf)/nemu-log.txt
 NEMUFLAGS += -b
 # IMAGE 是绝对路径，定义在 abstract-machine/Makefile. 因此 run 目标执行时切换到 NEMU_HOME 也不会影响后续程序读取 elf 文件
-NEMUFLAGS += -e $(IMAGE).elf
+NEMUFLAGS += -e $(IMAGE).elf -e /home/jasper/ics2023/nanos-lite/build/ramdisk.img
 
 # mainargs 可以从 make 命令行输入，是作为镜像的主函数命令行参数。本操作是把 mainargs Makefile 变量放在宏 MAINARGS 中
 CFLAGS += -DMAINARGS=\"$(mainargs)\"

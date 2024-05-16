@@ -24,7 +24,7 @@ void init_difftest(char *ref_so_file, long img_size, int port);
 void init_device();
 void init_sdb();
 void init_disasm(const char *triple);
-void init_elf(const char *elf_file);
+void init_elf(char **elf_file, int elf_file_num);
 
 static void welcome() {
   Log("Trace: %s", MUXDEF(CONFIG_TRACE, ANSI_FMT("ON", ANSI_FG_GREEN), ANSI_FMT("OFF", ANSI_FG_RED)));
@@ -44,7 +44,8 @@ static void welcome() {
 void sdb_set_batch_mode();
 
 static char *log_file = NULL;
-static char *elf_file = NULL;
+static char *elf_file[2];
+static int elf_file_num = 0;
 static char *diff_so_file = NULL;
 static char *img_file = NULL;
 static int difftest_port = 1234;
@@ -87,7 +88,7 @@ static int parse_args(int argc, char *argv[]) {
   while ( (o = getopt_long(argc, argv, "-bhe:l:d:p:", table, NULL)) != -1) {
     switch (o) {
       case 'b': sdb_set_batch_mode(); break;
-      case 'e': elf_file = optarg; break;
+      case 'e': assert(elf_file_num < 2); elf_file[elf_file_num++] = optarg; break;
       case 'p': sscanf(optarg, "%d", &difftest_port); break;
       case 'l': log_file = optarg; break;
       case 'd': diff_so_file = optarg; break;
@@ -119,7 +120,7 @@ void init_monitor(int argc, char *argv[]) {
   init_log(log_file);
 
   /* Open the elf file and get functions infos */
-  init_elf(elf_file);
+  init_elf(elf_file, elf_file_num);
 
   /* Initialize memory. */
   init_mem();

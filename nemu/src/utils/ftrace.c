@@ -11,6 +11,7 @@
 #define NAME_LENGTH 128
 #define FT_CALL 0
 #define FT_RET  1
+#define MAX_FUNC 102400
 
 typedef struct {
     char name[NAME_LENGTH];
@@ -28,51 +29,57 @@ typedef struct fnode {
     int call_depth;
 } fnode;
 
-static finfo funcs[102400];
+static finfo funcs[MAX_FUNC];
 static unsigned int ind = 0;
 static int call_depth = 0;
 static fnode* func_stack_head = NULL;
 static fnode* func_stack_tail = NULL;
 static const char *action_type[] = {"Call", "Ret "};
 
-void init_elf(const char* elf_file) {
+void init_elf(char **elf_file, int elf_file_num) {
     if (elf_file == NULL) {
         Log("elf file path is null");
         return;
     }
     int fd;
     struct stat st;
-    fd = open(elf_file, O_RDONLY);
-    Assert(fd >= 0, "can not open elf file: %s", elf_file);
-    fstat(fd, &st);
+    for (int i = 0; i < elf_file_num; i++) {
+        char *file_path = elf_file[i];
+        Log("Add elf file: %s", file_path);
+        fd = open(file_path, O_RDONLY);
+        Assert(fd >= 0, "can not open elf file: %s", file_path);
+        fstat(fd, &st);
 
-    char *mem = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+        char *mem = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
 
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)mem;
-    Elf32_Shdr *shdr = (Elf32_Shdr *)(mem + ehdr->e_shoff);
+        Elf32_Ehdr *ehdr = (Elf32_Ehdr *)mem;
+        Elf32_Shdr *shdr = (Elf32_Shdr *)(mem + ehdr->e_shoff);
 
-    for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdr[i].sh_type == SHT_SYMTAB || shdr[i].sh_type == SHT_DYNSYM) {
-            // Found a symbol table, now find its associated string table
-            Elf32_Shdr *strtab_shdr = &shdr[shdr[i].sh_link];
-            // 拿到 String table section 相对于 ELF 文件开头的偏移位置
-            const char *const strtab = mem + strtab_shdr->sh_offset;
-            Elf32_Sym *symtab = (Elf32_Sym *)(mem + shdr[i].sh_offset);
-            int num_symbols = shdr[i].sh_size / shdr[i].sh_entsize;
+        for (int i = 0; i < ehdr->e_shnum; i++) {
+            if (shdr[i].sh_type == SHT_SYMTAB || shdr[i].sh_type == SHT_DYNSYM) {
+                // Found a symbol table, now find its associated string table
+                Elf32_Shdr *strtab_shdr = &shdr[shdr[i].sh_link];
+                // 拿到 String table section 相对于 ELF 文件开头的偏移位置
+                const char *const strtab = mem + strtab_shdr->sh_offset;
+                Elf32_Sym *symtab = (Elf32_Sym *)(mem + shdr[i].sh_offset);
+                int num_symbols = shdr[i].sh_size / shdr[i].sh_entsize;
 
-            for (int j = 0; j < num_symbols; j++) {
-                if (ELF32_ST_TYPE(symtab[j].st_info) == STT_FUNC) {
-                    strncpy(funcs[ind].name, strtab + symtab[j].st_name, NAME_LENGTH);
-                    
-                    funcs[ind].size = symtab[j].st_size;
-                    funcs[ind].addr = symtab[j].st_value;
-                    ind++;
+                for (int j = 0; j < num_symbols; j++) {
+                    if (ELF32_ST_TYPE(symtab[j].st_info) == STT_FUNC) {
+                        strncpy(funcs[ind].name, strtab + symtab[j].st_name, NAME_LENGTH);
+                        
+                        funcs[ind].size = symtab[j].st_size;
+                        funcs[ind].addr = symtab[j].st_value;
+                        ind++;
+                        assert(ind < MAX_FUNC);
+                    }
                 }
             }
         }
+        Log("total func num=%d",ind);
+        munmap(mem, st.st_size);
+        close(fd);
     }
-    munmap(mem, st.st_size);
-    close(fd);
 }
 
 int which_func(vaddr_t addr) {
@@ -101,8 +108,7 @@ void append(vaddr_t cur, vaddr_t target_addr, int dst_index, const char *type) {
         newnode->call_depth = call_depth;
     }
     Assert(call_depth >= 0, "function call depth less than 0, something wrong");
-    IFDEF(CONFIG_FTRACE, log_write("[ftrace] %x: %*s%s [%s@%x]\n", newnode->pc, newnode->call_depth, "", newnode->type, newnode->dst_func->name, newnode->target_addr));
-
+    IFDEF(CONFIG_FTRACE, log_write("[ftrace] %x: %*s%s [%s@%x]", newnode->pc, newnode->call_depth, "", newnode->type, newnode->dst_func->name, newnode->target_addr));
     if (func_stack_head == NULL) {
         func_stack_head = newnode;
         func_stack_tail = func_stack_head;
