@@ -4,7 +4,7 @@
 #include "am.h"
 #include "debug.h"
 
-//#define CONFIG_STRACE
+#define CONFIG_STRACE
 // 宏定义的内部不能出现其他预处理指令, 宏不能被其他预处理指令中断
 /*#ifdef CONFIG_STRACE*/
 /*#define TRACE_CALL(func, a, ret) strace(func, a, ret)*/
@@ -22,7 +22,7 @@ static void strace(char *s, uintptr_t *a, uintptr_t ret) {
 
 static uintptr_t sys_exit(uintptr_t *a) {
     Log("[strace]exit");                    // exit 系统调用使用 halt 函数实现的时候，直接就出去了，走不到 TRACE_CALL 的逻辑，所以手动在这里添加一个日志
-    halt(0);
+    halt(a[1]);                             // syscall 除了第一个参数，还传递了第二个 status。所以第二个参数a[1]就是 status
     return 0;
 }
 
@@ -49,6 +49,10 @@ static uintptr_t sys_write(uintptr_t *a) {
     return num - cnt;
 }
 
+static uintptr_t sys_brk(uintptr_t *a) {
+    return 0;                   // always succeed
+}
+
 void do_syscall(Context *c) {
   uintptr_t a[4];
   a[0] = c->GPR1;               // 系统调用号, a7 寄存器
@@ -60,6 +64,7 @@ void do_syscall(Context *c) {
       SYSCALL_CASE(exit);
       SYSCALL_CASE(yield);
       SYSCALL_CASE(write);
+      SYSCALL_CASE(brk);
       default: panic("Unhandled syscall ID = %d", a[0]);
   }
 }
