@@ -1,10 +1,11 @@
 #include <common.h>
 #include <stdint.h>
+#include <fs.h>
 #include "syscall.h"
 #include "am.h"
 #include "debug.h"
 
-#define CONFIG_STRACE
+//#define CONFIG_STRACE
 // 宏定义的内部不能出现其他预处理指令, 宏不能被其他预处理指令中断
 /*#ifdef CONFIG_STRACE*/
 /*#define TRACE_CALL(func, a, ret) strace(func, a, ret)*/
@@ -31,6 +32,20 @@ static uintptr_t sys_yield(uintptr_t *a) {
     return 0;
 }
 
+static uintptr_t sys_open(uintptr_t *a) {
+    const char *pathname = (const char *)a[1];
+    int flags = a[2];
+    int mode = a[3];
+    return fs_open(pathname, flags, mode);
+}
+
+static uintptr_t sys_read(uintptr_t *a) {
+    int fd = a[1];
+    void *buf = (void *)a[2];
+    size_t len = a[3];
+    return fs_read(fd, buf, len);
+}
+
 static uintptr_t sys_write(uintptr_t *a) {
     int fd = a[1];
     char *buf = (char *)a[2];
@@ -45,8 +60,15 @@ static uintptr_t sys_write(uintptr_t *a) {
         return num - cnt;
     }
     // 输出到文件
-    //return fs_write(fd, buf, cnt);
-    return num - cnt;
+    return fs_write(fd, buf, cnt);
+}
+
+static uintptr_t sys_lseek(uintptr_t *a) {
+    return fs_lseek(a[1], a[2], a[3]);
+}
+
+static uintptr_t sys_close(uintptr_t *a) {
+    return fs_close(a[1]);
 }
 
 static uintptr_t sys_brk(uintptr_t *a) {
@@ -65,6 +87,10 @@ void do_syscall(Context *c) {
       SYSCALL_CASE(yield);
       SYSCALL_CASE(write);
       SYSCALL_CASE(brk);
+      SYSCALL_CASE(read);
+      SYSCALL_CASE(open);
+      SYSCALL_CASE(lseek);
+      SYSCALL_CASE(close);
       default: panic("Unhandled syscall ID = %d", a[0]);
   }
 }
