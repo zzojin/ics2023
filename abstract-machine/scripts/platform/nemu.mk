@@ -18,7 +18,7 @@ NEMUFLAGS += -b
 # IMAGE 是绝对路径，定义在 abstract-machine/Makefile. 因此 run 目标执行时切换到 NEMU_HOME 也不会影响后续程序读取 elf 文件
 NEMUFLAGS += -e $(IMAGE).elf 
 #-e /home/jasper/ics2023/nanos-lite/build/ramdisk.img 
-#当 ramdisk 包含多个文件时，目前的多文件 elf 还是有问题，需要修改 ftrace init_elf 的逻辑
+#当 ramdisk 包含多个文件时，不能直接用 ramdisk 代替程序的原始 elf 文件
 
 # mainargs 可以从 make 命令行输入，是作为镜像的主函数命令行参数。本操作是把 mainargs Makefile 变量放在宏 MAINARGS 中
 CFLAGS += -DMAINARGS=\"$(mainargs)\"

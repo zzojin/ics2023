@@ -27,7 +27,7 @@ void init_proc() {
 
   // load program here
   // naive_uload(NULL, "/bin/hello");
-  naive_uload(NULL, "/bin/file-test");
+  naive_uload(NULL, "/bin/timer-test");
 
 }
 

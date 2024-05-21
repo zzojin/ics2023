@@ -1,9 +1,12 @@
 #include <common.h>
 #include <stdint.h>
 #include <fs.h>
+#include <sys/time.h>
 #include "syscall.h"
 #include "am.h"
+#include "amdev.h"
 #include "debug.h"
+#include "klib-macros.h"
 
 //#define CONFIG_STRACE
 // 宏定义的内部不能出现其他预处理指令, 宏不能被其他预处理指令中断
@@ -75,6 +78,21 @@ static uintptr_t sys_brk(uintptr_t *a) {
     return 0;                   // always succeed
 }
 
+static uintptr_t sys_gettimeofday(uintptr_t *a) {
+    struct timeval *tv = (struct timeval *)a[1];
+    struct timezone *tz = (struct timezone *)a[2];
+    uint64_t us = io_read(AM_TIMER_UPTIME).us;              // 微秒
+    if (tv) {
+        tv->tv_sec = us / (1000 * 1000);
+        tv->tv_usec = us % (1000 * 1000);                   // 余数微秒
+    }
+
+    if (tz) {
+
+    }
+    return 0;
+}
+
 void do_syscall(Context *c) {
   uintptr_t a[4];
   a[0] = c->GPR1;               // 系统调用号, a7 寄存器
@@ -91,6 +109,7 @@ void do_syscall(Context *c) {
       SYSCALL_CASE(open);
       SYSCALL_CASE(lseek);
       SYSCALL_CASE(close);
+      SYSCALL_CASE(gettimeofday);
       default: panic("Unhandled syscall ID = %d", a[0]);
   }
 }
