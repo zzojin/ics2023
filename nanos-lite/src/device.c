@@ -38,11 +38,26 @@ size_t events_read(void *buf, size_t offset, size_t len) {
 }
 
 size_t dispinfo_read(void *buf, size_t offset, size_t len) {
-  return 0;
+    AM_GPU_CONFIG_T gpu_cfg = io_read(AM_GPU_CONFIG);
+    int *b = (int *)buf;
+    *b++ = gpu_cfg.width;
+    *b++ = gpu_cfg.height;
+    return (char *)b - (char *)buf;
 }
 
 size_t fb_write(const void *buf, size_t offset, size_t len) {
-  return 0;
+    AM_GPU_CONFIG_T cfg = io_read(AM_GPU_CONFIG);
+    int x = (offset / 4) % cfg.width;               // 行内偏移
+    int y = (offset / 4) / cfg.width;               // 行号
+    
+    // 超出屏幕范围
+    if (len + offset > cfg.width * cfg.height * 4) 
+        len = cfg.width*cfg.height*4 - offset;
+
+    // amdev.h AM_DEVREG(11, GPU_FBDRAW,   WR, int x, y; void *pixels; int w, h; bool sync);
+    // 写入一行
+    io_write(AM_GPU_FBDRAW, x, y, (uint32_t*)buf, len / 4, 1, true);
+    return len;
 }
 
 void init_device() {
