@@ -127,35 +127,41 @@ typedef	__uint128_t fixedptud;
 
 /* Multiplies a fixedpt number with an integer, returns the result. */
 static inline fixedpt fixedpt_muli(fixedpt A, int B) {
-	return 0;
+	return (fixedpt)(A * B);
 }
 
 /* Divides a fixedpt number with an integer, returns the result. */
 static inline fixedpt fixedpt_divi(fixedpt A, int B) {
-	return 0;
+	return (fixedpt)(A / B);
 }
 
 /* Multiplies two fixedpt numbers, returns the result. */
 static inline fixedpt fixedpt_mul(fixedpt A, fixedpt B) {
-	return 0;
+	return (fixedpt) (((fixedptd)A * (fixedptd)B) >> FIXEDPT_FBITS); // 因为存在移位，所以要转成更大的 fixeddptd 防止乘法溢出，再不济要比原来的位数大 FIXEDPT_FBITS
 }
 
 
 /* Divides two fixedpt numbers, returns the result. */
 static inline fixedpt fixedpt_div(fixedpt A, fixedpt B) {
-	return 0;
+	return (A / B) << FIXEDPT_FBITS;
 }
 
 static inline fixedpt fixedpt_abs(fixedpt A) {
-	return 0;
+	return A >= 0 ? A : -A;
 }
 
+// 一定要注意除了判断正负号，小数部分是否为零也是必要条件，否则会造成错误，例如 -1 计算结果会是 -2
 static inline fixedpt fixedpt_floor(fixedpt A) {
-	return 0;
+	fixedpt integral = A >> FIXEDPT_FBITS;
+    return integral << FIXEDPT_FBITS;
 }
 
 static inline fixedpt fixedpt_ceil(fixedpt A) {
-	return 0;
+	fixedpt integral = A >> FIXEDPT_FBITS;
+    if ((A & ((1 << FIXEDPT_FBITS) - 1)) != 0) {
+        integral += 1;
+    }
+    return integral << FIXEDPT_FBITS;
 }
 
 /*

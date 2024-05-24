@@ -169,7 +169,7 @@ $(CLEAN_ALL):
 
 ### Build fsimg and ramdisk for Nanos-lite
 APPS =
-TESTS = dummy hello file-test timer-test event-test bmp-test
+TESTS = dummy hello file-test timer-test event-test bmp-test fixedptc-test
 
 ### 切换到 apps 和 tests 目录下的某程序目录，编译 install 目标
 ### 切换到对应目录后，有对应的 Makefile，会指定 NAME SRC 和 NAVY_HOME/Makefile
