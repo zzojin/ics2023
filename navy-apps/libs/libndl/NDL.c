@@ -5,6 +5,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <assert.h>
 
 static int evtdev = -1;
 static int fbdev = -1;
@@ -20,8 +21,7 @@ uint32_t NDL_GetTicks() {
 // 读出一条事件信息, 将其写入`buf`中, 最长写入`len`字节
 // 若读出了有效的事件, 函数返回1, 否则返回0
 int NDL_PollEvent(char *buf, int len) {
-    int fd = open("/dev/events", O_RDONLY);
-    if (read(fd, buf, len) > 0) {
+    if (read(evtdev, buf, len) > 0) {
         return 1;
     }
     else {
@@ -93,6 +93,11 @@ int NDL_Init(uint32_t flags) {
   if (getenv("NWM_APP")) {
     evtdev = 3;
   }
+  //init_ticks = NDL_GetTicks_internal();
+  evtdev = open("/dev/events", O_RDONLY);
+  assert(evtdev);
+  fbdev = open("/dev/fb", O_WRONLY);
+  assert(fbdev);
   return 0;
 }
 
