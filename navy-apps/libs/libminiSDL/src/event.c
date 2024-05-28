@@ -17,13 +17,30 @@ int SDL_PushEvent(SDL_Event *ev) {
   return 0;
 }
 
-int SDL_PollEvent(SDL_Event *ev) {
-  return 0;
+int SDL_PollEvent(SDL_Event *event) {
+  int keynum = sizeof(keyname)/sizeof(char*);
+  
+    if (NDL_PollEvent(evbuf, sizeof(evbuf))) {
+      if (evbuf[1] == 'd') event->key.type = SDL_KEYDOWN;
+      else event->key.type = SDL_KEYUP;
+      while (keynum--) {
+        if (strcmp(keyname[keynum], evbuf+3) == 0) {
+          if (event->key.type == SDL_KEYDOWN) {
+            key_state[keynum] = 1;
+          } else {
+            key_state[keynum] = 0;
+          }
+          event->key.keysym.sym = keynum;
+        }
+      }
+      
+    } 
+  
+  return 1;
 }
 
 int SDL_WaitEvent(SDL_Event *event) {
   int keynum = sizeof(keyname)/sizeof(char*);
-  printf("keynum=%d\n",keynum);
   while (1) {
     if (NDL_PollEvent(evbuf, sizeof(evbuf))) {
       if (evbuf[1] == 'd') event->key.type = SDL_KEYDOWN;

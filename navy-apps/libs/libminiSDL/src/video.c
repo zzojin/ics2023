@@ -7,9 +7,81 @@
 void SDL_BlitSurface(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect) {
   assert(dst && src);
   assert(dst->format->BitsPerPixel == src->format->BitsPerPixel);
+    if (src->format->BitsPerPixel == 32) {
+    uint32_t* src_pixels = (uint32_t*)src->pixels;
+    uint32_t* dst_pixels = (uint32_t*)dst->pixels;
+
+    int rect_w, rect_h, src_x, src_y, dst_x, dst_y;
+    if (srcrect) {
+      rect_w = srcrect->w; rect_h = srcrect->h;
+      src_x = srcrect->x; src_y = srcrect->y; 
+    } else {
+      rect_w = src->w; rect_h = src->h;
+      src_x = 0; src_y = 0;
+    }
+    if (dstrect) {
+      dst_x = dstrect->x, dst_y = dstrect->y;
+    } else {
+      dst_x = 0; dst_y = 0;
+    }
+    
+    for (int i = 0; i < rect_h; ++i) {
+      for (int j = 0; j < rect_w; ++j) {
+        dst_pixels[(dst_y + i) * dst->w + dst_x + j] = src_pixels[(src_y + i) * src->w + src_x + j];
+      }
+    }
+  } else if (src->format->BitsPerPixel == 8) {
+    uint8_t* src_pixels = (uint8_t*)src->pixels;
+    uint8_t* dst_pixels = (uint8_t*)dst->pixels;
+
+    int rect_w, rect_h, src_x, src_y, dst_x, dst_y;
+    if (srcrect) {
+      rect_w = srcrect->w; rect_h = srcrect->h;
+      src_x = srcrect->x; src_y = srcrect->y; 
+    } else {
+      rect_w = src->w; rect_h = src->h;
+      src_x = 0; src_y = 0;
+    }
+    if (dstrect) {
+      dst_x = dstrect->x, dst_y = dstrect->y;
+    } else {
+      dst_x = 0; dst_y = 0;
+    }
+    
+    for (int i = 0; i < rect_h; ++i) {
+      for (int j = 0; j < rect_w; ++j) {
+        dst_pixels[(dst_y + i) * dst->w + dst_x + j] = src_pixels[(src_y + i) * src->w + src_x + j];
+      }
+    }
+  } else {
+    assert(0);
+  }
+
 }
 
 void SDL_FillRect(SDL_Surface *dst, SDL_Rect *dstrect, uint32_t color) {
+    // 这个函数与 SDL_UpdateRect 有一个区别。就是本函数的颜色一定是 32 位的，而前者根据 pixelformat 的格式，可能是一个字节搭配调色板的形式
+    uint32_t *pixels = (uint32_t *)dst->pixels;
+      int dst_w = dst->w;
+      int rect_h, rect_w, rect_x, rect_y;
+
+      if (dstrect == NULL){
+        rect_w = dst->w;
+        rect_h = dst->h;
+        rect_x = 0;
+        rect_y = 0;
+      }else {
+        rect_w = dstrect->w;
+        rect_h = dstrect->h;
+        rect_x = dstrect->x;
+        rect_y = dstrect->y;
+      }
+
+      for (int i = 0; i < rect_h; ++i){
+        for (int j = 0; j < rect_w; ++j){
+          pixels[(rect_y + i) * dst_w + rect_x + j] = color;
+        }
+      }
 }
 
 // 小端系统重常用 ARGB，按照字节从低到高的顺序则是：BGRA
