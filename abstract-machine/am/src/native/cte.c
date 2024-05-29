@@ -90,6 +90,7 @@ static void iret(ucontext_t *uc) {
   if (__am_in_userspace((void *)uc->uc_mcontext.gregs[REG_RIP])) __am_pmem_protect();
 }
 
+// 手动定义的信号处理函数，为指定的几种信号提供自定义的处理流程，覆盖了默认的信号处理函数。需要在 cte_init 时为每个需要特殊处理的信号注册其信号处理函数。
 static void sig_handler(int sig, siginfo_t *info, void *ucontext) {
   thiscpu->ev = (Event) {0};
   thiscpu->ev.event = EVENT_ERROR;
@@ -99,7 +100,10 @@ static void sig_handler(int sig, siginfo_t *info, void *ucontext) {
     case SIGUSR2: thiscpu->ev.event = EVENT_YIELD; break;
     case SIGVTALRM: thiscpu->ev.event = EVENT_IRQ_TIMER; break;
     case SIGSEGV:
-      if (info->si_code == SEGV_ACCERR) {
+      printf("info->si_code=%d\n", info->si_code);
+      // 我手动添加了 info->si_code==SEGV_MAPERR 条件之后，nanos-lite 下运行 make ARCH=native run 测试 nterm 成功了. 并且删去原先的测试条件  si_code==SEGV_ACCERR 暂时没有问题
+      // TODO: 使用 native 架构如果遇到问题，时时刻刻记得回来检查这里
+      if (info->si_code == SEGV_MAPERR || info->si_code == SEGV_ACCERR) {
         switch ((uintptr_t)info->si_addr) {
           case 0x100000: thiscpu->ev.event = EVENT_SYSCALL; break;
           case 0x100008: iret(ucontext); return;
@@ -135,7 +139,7 @@ static void install_signal_handler() {
   s.sa_sigaction = sig_handler;
   s.sa_flags = SA_SIGINFO | SA_RESTART | SA_ONSTACK;
   __am_get_intr_sigmask(&s.sa_mask);
-
+  // 为各种信号注册处理函数
   int ret = sigaction(SIGVTALRM, &s, NULL);
   assert(ret == 0);
   ret = sigaction(SIGUSR1, &s, NULL);

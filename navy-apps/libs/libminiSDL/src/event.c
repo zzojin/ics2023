@@ -33,10 +33,9 @@ int SDL_PollEvent(SDL_Event *event) {
           event->key.keysym.sym = keynum;
         }
       }
-      
+      return 1; 
     } 
-  
-  return 1;
+  return 0;
 }
 
 int SDL_WaitEvent(SDL_Event *event) {
