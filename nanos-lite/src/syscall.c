@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <fs.h>
 #include <sys/time.h>
+#include <proc.h>
 #include "syscall.h"
 #include "am.h"
 #include "amdev.h"
@@ -17,6 +18,7 @@
 /*#endif*/
 
 #define SYSCALL_CASE(func) case SYS_##func: c->GPRx = sys_##func(a); strace(#func, a, c->GPRx); break;
+void naive_uload(PCB *pcb, const char *filename);
 
 static void strace(char *s, uintptr_t *a, uintptr_t ret) {
 #ifdef CONFIG_STRACE
@@ -24,9 +26,18 @@ static void strace(char *s, uintptr_t *a, uintptr_t ret) {
 #endif
 }
 
+static uintptr_t sys_execve(uintptr_t *a) {
+    const char *fname = (const char *)a[1];                                         
+    Log("Ready to load %s",fname); 
+    // 暂时不支持程序的输入参数
+    naive_uload(NULL, fname);
+    return 0;
+}
+
 static uintptr_t sys_exit(uintptr_t *a) {
     Log("[strace]exit");                    // exit 系统调用使用 halt 函数实现的时候，直接就出去了，走不到 TRACE_CALL 的逻辑，所以手动在这里添加一个日志
-    halt(a[1]);                             // syscall 除了第一个参数，还传递了第二个 status。所以第二个参数a[1]就是 status
+    // halt(a[1]);                             // syscall 除了第一个参数，还传递了第二个 status。所以第二个参数a[1]就是 status
+    naive_uload(NULL, "/bin/nterm");
     return 0;
 }
 
@@ -110,6 +121,7 @@ void do_syscall(Context *c) {
       SYSCALL_CASE(lseek);
       SYSCALL_CASE(close);
       SYSCALL_CASE(gettimeofday);
+      SYSCALL_CASE(execve);
       default: panic("Unhandled syscall ID = %d", a[0]);
   }
 }
