@@ -20,8 +20,10 @@
 #include <readline/history.h>
 #include "sdb.h"
 #include <stdio.h>
+#include <string.h>
 #include <utils.h>
 #include <memory/vaddr.h>
+#include <memory/paddr.h>
 
 static int is_batch_mode = false;
 static int qflag = 0;
@@ -65,6 +67,8 @@ static int cmd_x(char *args);
 static int cmd_p(char *args);
 static int cmd_w(char *args);
 static int cmd_d(char *args);
+static int cmd_save(char *args);
+static int cmd_load(char *args);
 
 static struct {
   const char *name;
@@ -81,7 +85,9 @@ static struct {
   { "x", "print memory", cmd_x },
   { "p", "compute expression", cmd_p },
   { "w", "add new watchpoint", cmd_w },
-  { "d", "delete watchpoint by number", cmd_d }
+  { "d", "delete watchpoint by number", cmd_d },
+  { "load", "load nemu state, including mem and regs", cmd_load },
+  { "save", "save nemu state, including mem and regs", cmd_save },
 };
 
 #define NR_CMD ARRLEN(cmd_table)
@@ -173,6 +179,49 @@ static int cmd_d(char *args) {
     int NO;
     sscanf(args, "%d", &NO);
     free_wp(NO);
+    return 0;
+}
+
+#define FILE_PATH_LENGTH 128
+static int cmd_save(char *args) {
+    size_t len = strlen(args);
+    char filepath[FILE_PATH_LENGTH ];
+    strcpy(filepath, getenv("NEMU_HOME"));
+    strcat(filepath, "/src/monitor/nemu_history");
+
+    if (len > 128 - strlen(filepath)) {
+        printf("filename too long!\n");
+        return 0;
+    }
+    strcat(filepath, args);
+    FILE *fp = fopen(filepath, "w");
+    save_mem(fp);
+    save_regs(fp);
+    //save_mem(fp);
+    printf("snapshot saved\n");
+    fclose(fp);
+    return 0;
+}
+
+#define FILE_PATH_LENGTH 128
+static int cmd_load(char *args) {
+    size_t len = strlen(args);
+    char filepath[FILE_PATH_LENGTH ];
+    strcpy(filepath, getenv("NEMU_HOME"));
+    strcat(filepath, "/src/monitor/nemu_history");
+
+    if (len > 128 - strlen(filepath)) {
+        printf("filename too long!\n");
+        return 0;
+    }
+
+    strcat(filepath, args);
+    FILE *fp = fopen(filepath, "r");
+    load_mem(fp);
+    load_regs(fp);
+    //load_mem(fp);
+    printf("snapshot loaded\n");
+    fclose(fp);
     return 0;
 }
 

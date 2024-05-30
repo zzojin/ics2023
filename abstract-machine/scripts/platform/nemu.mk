@@ -14,7 +14,7 @@ LDFLAGS   += -T $(AM_HOME)/scripts/linker.ld \
 # 指定程序入口点是 _start, 并且启用垃圾回收功能，从而移出未被任何部分引用的代码和数据段，可缩减最终二进制文件大小
 LDFLAGS   += --gc-sections -e _start   
 NEMUFLAGS += -l $(shell dirname $(IMAGE).elf)/nemu-log.txt
-NEMUFLAGS += -b
+#NEMUFLAGS += -b
 # IMAGE 是绝对路径，定义在 abstract-machine/Makefile. 因此 run 目标执行时切换到 NEMU_HOME 也不会影响后续程序读取 elf 文件
 NEMUFLAGS += -e $(IMAGE).elf 
 #-e /home/jasper/ics2023/nanos-lite/build/ramdisk.img 
