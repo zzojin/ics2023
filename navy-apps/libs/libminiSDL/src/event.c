@@ -23,6 +23,9 @@ int SDL_PollEvent(SDL_Event *event) {
     if (NDL_PollEvent(evbuf, sizeof(evbuf))) {
       if (evbuf[1] == 'd') event->key.type = SDL_KEYDOWN;
       else event->key.type = SDL_KEYUP;
+      int len = strlen(evbuf);
+      // 删除换行符，便于比较
+      evbuf[len - 1] = '\0';
       while (keynum--) {
         if (strcmp(keyname[keynum], evbuf+3) == 0) {
           if (event->key.type == SDL_KEYDOWN) {
