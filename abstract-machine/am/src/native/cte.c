@@ -94,13 +94,13 @@ static void iret(ucontext_t *uc) {
 static void sig_handler(int sig, siginfo_t *info, void *ucontext) {
   thiscpu->ev = (Event) {0};
   thiscpu->ev.event = EVENT_ERROR;
-  printf("sig %d\n", sig);
+  //printf("sig %d\n", sig);
   switch (sig) {
     case SIGUSR1: thiscpu->ev.event = EVENT_IRQ_IODEV; break;
     case SIGUSR2: thiscpu->ev.event = EVENT_YIELD; break;
     case SIGVTALRM: thiscpu->ev.event = EVENT_IRQ_TIMER; break;
     case SIGSEGV:
-      printf("info->si_code=%d\n", info->si_code);
+      //printf("info->si_code=%d\n", info->si_code);
       // 我手动添加了 info->si_code==SEGV_MAPERR 条件之后，nanos-lite 下运行 make ARCH=native run 测试 nterm 成功了. 并且删去原先的测试条件  si_code==SEGV_ACCERR 暂时没有问题
       // TODO: 使用 native 架构如果遇到问题，时时刻刻记得回来检查这里
       if (info->si_code == SEGV_MAPERR || info->si_code == SEGV_ACCERR) {
@@ -122,7 +122,7 @@ static void sig_handler(int sig, siginfo_t *info, void *ucontext) {
       }
       break;
   }
-  printf("thiscpu event %d\n", thiscpu->ev.event);
+  //printf("thiscpu event %d\n", thiscpu->ev.event);
 
   if (thiscpu->ev.event == EVENT_ERROR) {
     thiscpu->ev.ref = (uintptr_t)info->si_addr;
