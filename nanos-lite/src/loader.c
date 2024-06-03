@@ -86,3 +86,12 @@ void context_kload(PCB *pcb, void (*entry)(void *), void *arg) {
     area.end = pcb->stack  + STACK_SIZE;
     pcb->cp = kcontext(area, entry, arg);
 }
+
+void context_uload(PCB *pcb, const char *filename) {
+  AddrSpace addr;
+  uintptr_t entry = loader(pcb, filename);
+
+  pcb->cp = ucontext(&addr, heap, (void*)entry);
+  // 根据讲义所说，nanos 与 navy 做了一个约定，把用户栈栈顶位置放到 GPRX，即寄存器 a0.等到 navy/crt0/start.S 跳转部客户程序时，设置用户栈，mv sp, a0
+  pcb->cp->GPRx = (uintptr_t) heap.end;                 // GPRX = a0, heap.end = PMEM_END, 看起来像是把 heap 的一部分当做用户栈来用
+}

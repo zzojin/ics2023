@@ -22,7 +22,9 @@ Context* __am_irq_handle(Context *c) {
     // 事件分发，交由事件处理函数，什么样的事件就执行对应的处理函数
     //printf("before schedule, c address = %p\n", c);
     c = user_handler(ev, c);
-    //printf("after schedule, c address = %p\n", c);
+    /*printf("after schedule, c address = %p\n", c);
+     *printf("after schedule, sp = %p\n", c->gpr[2]);
+     *printf("after schedule, a0 GPRx = %p\n", c->GPRx);*/
 
     // mepc 修改，大多数情况是继续执行自陷指令的下一条指令
     switch (ev.event) {
