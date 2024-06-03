@@ -80,3 +80,9 @@ void naive_uload(PCB *pcb, const char *filename) {
   ((void(*)())entry) ();
 }
 
+void context_kload(PCB *pcb, void (*entry)(void *), void *arg) {
+    Area area;
+    area.start = pcb->stack;
+    area.end = pcb->stack  + STACK_SIZE;
+    pcb->cp = kcontext(area, entry, arg);
+}

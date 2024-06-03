@@ -66,6 +66,8 @@ __am_asm_trap:
   # 已经保存了异常处理程序执行之前所有的上下文，现在跳转到位于 AM 的异常处理程序
   jal __am_irq_handle
 
+  mv sp, a0
+
   # 异常处理结束，弹栈恢复异常出现之前的上下文
   LOAD t1, OFFSET_STATUS(sp)
   LOAD t2, OFFSET_EPC(sp)

@@ -47,4 +47,7 @@ typedef uintptr_t PTE;
 
 #define PGSIZE    4096
 
+#define MSTATUS_MPIE 0x00000080
+#define MSTATUS_MIE 0x00000008
+
 #endif

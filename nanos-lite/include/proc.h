@@ -17,5 +17,5 @@ typedef union {
 } PCB;
 
 extern PCB *current;
-
+Context * schedule(Context * c);
 #endif

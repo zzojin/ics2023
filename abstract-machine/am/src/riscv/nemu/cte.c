@@ -1,6 +1,7 @@
 #include <am.h>
 #include <riscv/riscv.h>
 #include <klib.h>
+#include <nemu.h>
 
 #define Machine_Software_Interrupt (11)
 #define User_Software_Interrupt (8)
@@ -18,8 +19,11 @@ Context* __am_irq_handle(Context *c) {
         default:
             ev.event = EVENT_ERROR;
     }
-    // 事件分发，交由 trap 处理函数，什么样的事件就执行对应的处理函数
+    // 事件分发，交由事件处理函数，什么样的事件就执行对应的处理函数
+    //printf("before schedule, c address = %p\n", c);
     c = user_handler(ev, c);
+    //printf("after schedule, c address = %p\n", c);
+
     // mepc 修改，大多数情况是继续执行自陷指令的下一条指令
     switch (ev.event) {
         case EVENT_PAGEFAULT:
@@ -47,7 +51,16 @@ bool cte_init(Context*(*handler)(Event, Context*)) {
 }
 
 Context *kcontext(Area kstack, void (*entry)(void *), void *arg) {
-  return NULL;
+    // stack.start = stack top 地址最小的那一头
+  Context *ctx = (Context *)((uint8_t *)(kstack.end) - sizeof(Context));
+
+  ctx->gpr[0] = 0;
+  ctx->mepc = (uintptr_t)entry - 4;
+  //printf("==================kcontext=%x\n", ctx->mepc);
+  ctx->mstatus = 0x1800;         // 0x80 是MPIE，现在还不能添加，过不了 difftest 
+  ctx->GPRx = (uintptr_t)arg;    // GPR2 和 GPRx 是一样的，都是 gpr[10]
+  ctx->pdir = NULL;
+  return ctx;
 }
 
 void yield() {
