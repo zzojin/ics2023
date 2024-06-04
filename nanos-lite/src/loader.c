@@ -87,11 +87,53 @@ void context_kload(PCB *pcb, void (*entry)(void *), void *arg) {
     pcb->cp = kcontext(area, entry, arg);
 }
 
-void context_uload(PCB *pcb, const char *filename) {
+static int len(char *const str[]) {
+    int i = 0;
+    if (str == NULL)
+        return 0;
+    for (; str[i] != NULL; i++) {}
+    return i;
+}
+
+void context_uload(PCB *pcb, const char *filename, char *const argv[], char *const envp[]) {
   AddrSpace addr;
   uintptr_t entry = loader(pcb, filename);
 
   pcb->cp = ucontext(&addr, heap, (void*)entry);
   // 根据讲义所说，nanos 与 navy 做了一个约定，把用户栈栈顶位置放到 GPRX，即寄存器 a0.等到 navy/crt0/start.S 跳转部客户程序时，设置用户栈，mv sp, a0
-  pcb->cp->GPRx = (uintptr_t) heap.end;                 // GPRX = a0, heap.end = PMEM_END, 看起来像是把 heap 的一部分当做用户栈来用
+  // 现在需要把入参存入栈中，不再是 heap.end
+  char *sp = (char *)pcb->cp;
+  int argc = len(argv);
+  char* args[argc];
+  // 拷贝字符串到栈上
+  for (int i = 0; i < argc; ++i) {
+    sp -= (strlen(argv[i]) + 1);     // +1 为了补充末尾的\0
+    strcpy(sp, argv[i]);
+    args[i] = sp;
+  }
+  int envc = len(envp);
+  char* envs[envc];
+  for (int i = 0; i < envc; ++i) {
+    sp -= (strlen(envp[i]) + 1);     // +1 为了补充末尾的\0
+    strcpy(sp, argv[i]);
+    envs[i] = sp;
+  }
+  // 设置 NULL 以做指针数组的结尾标识，现在压入参数和环境变量的地址
+  char **sp_2 = (char **)sp;
+  --sp_2;
+  *sp_2 = NULL;
+  for (int i = envc - 1; i >= 0; i--) {
+      --sp_2;
+      *sp_2 = envs[i];
+  }
+  --sp_2;
+  *sp_2 = NULL;
+  for (int i = argc - 1; i >= 0; i--) {
+      --sp_2;
+      *sp_2 = args[i];
+  }
+  --sp_2;
+  *((int*)sp_2) = argc;
+  // 现在栈顶指向 argc，将栈顶的地址赋给 a0
+  pcb->cp->GPRx = (uintptr_t) sp_2;                 // GPRX = a0, 到时候在 navy-apps 会将这个赋给sp, 这样用户程序就能读取用户栈里的入参和环境变量了
 }

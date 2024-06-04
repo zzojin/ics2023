@@ -6,8 +6,14 @@
 int main(int argc, char *argv[], char *envp[]);
 extern char **environ;
 void call_main(uintptr_t *args) {
-  char *empty[] =  {NULL };
-  environ = empty;
-  exit(main(0, empty, empty));
+  int argc = ((int *)args)[0];
+  char **argv = (char **)((int *)args + 1);
+  char **p = argv;
+  // 注意判断 NULL 判断的是 *p, rather p != NULL
+  while (*p != NULL)
+      p++;
+  ++p;
+  environ = p;
+  exit(main(argc, argv, environ));
   assert(0);
 }
