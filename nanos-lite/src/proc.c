@@ -1,4 +1,9 @@
+#include "am.h"
+#include "debug.h"
+#include "fs.h"
 #include <proc.h>
+#include <stdio.h>
+#include <unistd.h>
 
 #define MAX_NR_PROC 4
 
@@ -17,17 +22,21 @@ void switch_boot_pcb() {
 void hello_fun(void *arg) {
   int j = 1;
   while (1) {
-    Log("Hello World from Nanos-lite with arg '%p' for the %dth time!", (uintptr_t)arg, j);
+    Log("Hello World from Nanos-lite with arg '%s' for the %dth time!", (char *)arg, j);
     j ++;
     yield();
   }
 }
 
 void init_proc() {
-    context_kload(&pcb[0], hello_fun, NULL);
-    char c[10] = "--skip";
-    char *argv[2] = {c, NULL};
-    context_uload(&pcb[1], "/bin/pal", argv, NULL);
+    context_kload(&pcb[0], hello_fun, "zhoujin");
+    /*char c[10] = "--skip";
+     *char *argv[2] = {c, NULL};
+     *context_uload(&pcb[1], "/bin/pal", argv, NULL);*/
+    char *argv_exec_test[2] = {"/bin/exec-test", NULL};
+    /*printf("pcb0 address=%p\n", &pcb[0]);
+     *printf("pcb1 address=%p\n", &pcb[1]);*/
+    context_uload(&pcb[1], "/bin/exec-test", argv_exec_test, NULL);
   switch_boot_pcb();
 
   Log("Initializing processes...");
@@ -53,7 +62,22 @@ Context* schedule(Context *prev) {
     //current = &pcb[0];
 
     current = (current == &pcb[0] ? &pcb[1] : &pcb[0]);
-
+    //printf("pcb address = %p, context address = %p\n", current, current->cp);
     // then return the new context
     return current->cp;
+}
+
+int execve(const char *path, char *const argv[], char *const envp[]) {
+    int fd = fs_open(path, 0, 0);
+    if (fd == -1) {
+        Log("can not open %s", path);
+        return -1;
+    } else {
+        fs_close(fd);
+        Log("Loading %s", path);
+    }
+    context_uload(current, path, argv, envp);
+    switch_boot_pcb();
+    yield();
+    return 0;
 }

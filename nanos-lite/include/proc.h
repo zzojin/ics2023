@@ -18,4 +18,5 @@ typedef union {
 
 extern PCB *current;
 Context * schedule(Context * c);
+int execve(const char *path, char *const argv[], char *const envp[]);
 #endif

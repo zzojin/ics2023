@@ -7,6 +7,10 @@
 #define PGSIZE 4096
 #endif
 
+#ifndef USER_STACK_PG_NUM
+#define USER_STACK_PG_NUM 8
+#endif
+
 #define PG_ALIGN __attribute((aligned(PGSIZE)))
 
 void* new_page(size_t);

@@ -1,6 +1,7 @@
 #include <am.h>
 #include <nemu.h>
 #include <klib.h>
+#include <stdint.h>
 
 static AddrSpace kas = {};
 static void* (*pgalloc_usr)(int) = NULL;
@@ -71,6 +72,8 @@ void map(AddrSpace *as, void *va, void *pa, int prot) {
 
 Context *ucontext(AddrSpace *as, Area kstack, void *entry) {
   Context *c = (Context *)kstack.end - 1;
-  c->mepc = (uintptr_t)entry;
+  c->mepc = (uintptr_t)entry - 4;
+  c->mstatus = 0x1800;
+  //printf("entry=%x\n", c->mepc);
   return c;
 }

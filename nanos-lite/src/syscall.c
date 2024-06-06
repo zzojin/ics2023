@@ -8,6 +8,7 @@
 #include "amdev.h"
 #include "debug.h"
 #include "klib-macros.h"
+#include "sys/unistd.h"
 
 //#define CONFIG_STRACE
 // 宏定义的内部不能出现其他预处理指令, 宏不能被其他预处理指令中断
@@ -19,6 +20,8 @@
 
 #define SYSCALL_CASE(func) case SYS_##func: c->GPRx = sys_##func(a); strace(#func, a, c->GPRx); break;
 void naive_uload(PCB *pcb, const char *filename);
+void context_uload(PCB *pcb, const char *filename, char *const argv[], char *const envp[]);
+void switch_boot_pcb();
 
 static void strace(char *s, uintptr_t *a, uintptr_t ret) {
 #ifdef CONFIG_STRACE
@@ -26,19 +29,27 @@ static void strace(char *s, uintptr_t *a, uintptr_t ret) {
 #endif
 }
 
+/*static uintptr_t sys_execve(uintptr_t *a) {
+ *    const char *fname = (const char *)a[1];                                         
+ *    Log("Ready to load %s",fname); 
+ *    // 暂时不支持程序的输入参数
+ *    naive_uload(NULL, fname);
+ *    return 0;
+ *}*/
+
 static uintptr_t sys_execve(uintptr_t *a) {
-    const char *fname = (const char *)a[1];                                         
+    const char *fname = (const char *)a[1];
+    char *const* argv = (char *const*)a[2];
+    char *const* envp = (char *const*)a[3];
+
     Log("Ready to load %s",fname); 
-    // 暂时不支持程序的输入参数
-    naive_uload(NULL, fname);
-    return 0;
+    return execve(fname, argv, envp);
 }
 
 static uintptr_t sys_exit(uintptr_t *a) {
     Log("[strace]exit");                    // exit 系统调用使用 halt 函数实现的时候，直接就出去了，走不到 TRACE_CALL 的逻辑，所以手动在这里添加一个日志
     // halt(a[1]);                             // syscall 除了第一个参数，还传递了第二个 status。所以第二个参数a[1]就是 status
-    naive_uload(NULL, "/bin/nterm");
-    return 0;
+    return execve("/bin/nterm", NULL, NULL);
 }
 
 static uintptr_t sys_yield(uintptr_t *a) {

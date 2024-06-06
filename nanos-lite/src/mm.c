@@ -3,7 +3,9 @@
 static void *pf = NULL;
 
 void* new_page(size_t nr_page) {
-  return NULL;
+    void *old_pf = pf;
+    pf = (void *)((char *)pf + nr_page * PGSIZE);
+    return old_pf;          // PA 手册要求返回地址段的首地址，所以返回 old_pf
 }
 
 #ifdef HAS_VME

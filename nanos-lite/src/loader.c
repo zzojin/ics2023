@@ -1,4 +1,5 @@
 #include "debug.h"
+#include "memory.h"
 #include <proc.h>
 #include <elf.h>
 #include <fs.h>
@@ -96,15 +97,13 @@ static int len(char *const str[]) {
 }
 
 void context_uload(PCB *pcb, const char *filename, char *const argv[], char *const envp[]) {
-  AddrSpace addr;
-  uintptr_t entry = loader(pcb, filename);
-
-  pcb->cp = ucontext(&addr, heap, (void*)entry);
-  // 根据讲义所说，nanos 与 navy 做了一个约定，把用户栈栈顶位置放到 GPRX，即寄存器 a0.等到 navy/crt0/start.S 跳转部客户程序时，设置用户栈，mv sp, a0
-  // 现在需要把入参存入栈中，不再是 heap.end
-  char *sp = (char *)pcb->cp;
+  // 现在需要把入参存入用户栈，用户栈的栈底设为 heap.end
+  // 更新：用 new_page 分配新的空间作为用户栈
+  char *sp = new_page(USER_STACK_PG_NUM) + USER_STACK_PG_NUM * PGSIZE;
+  //char *sp = heap.end;
   int argc = len(argv);
   char* args[argc];
+  
   // 拷贝字符串到栈上
   for (int i = 0; i < argc; ++i) {
     sp -= (strlen(argv[i]) + 1);     // +1 为了补充末尾的\0
@@ -118,7 +117,8 @@ void context_uload(PCB *pcb, const char *filename, char *const argv[], char *con
     strcpy(sp, argv[i]);
     envs[i] = sp;
   }
-  // 设置 NULL 以做指针数组的结尾标识，现在压入参数和环境变量的地址
+  // 压入指针数组，每个元素都是一个指向字符串首字符地址的指针。设置 NULL 以做指针数组的结尾标识。
+  // 现在压入argv[] and envp[]
   char **sp_2 = (char **)sp;
   --sp_2;
   *sp_2 = NULL;
@@ -134,6 +134,17 @@ void context_uload(PCB *pcb, const char *filename, char *const argv[], char *con
   }
   --sp_2;
   *((int*)sp_2) = argc;
+  
+  // TODO：loader 需要放在参数压栈的后面，还没搞清楚是为什么
+  AddrSpace addr;
+  uintptr_t entry = loader(pcb, filename);
+    Area area;
+    area.start = pcb->stack;
+    area.end = pcb->stack  + STACK_SIZE;
+    // 用户进程创建其内核栈
+  Context *ctx = ucontext(&addr, area, (void*)entry);
+  pcb->cp = ctx;
   // 现在栈顶指向 argc，将栈顶的地址赋给 a0
-  pcb->cp->GPRx = (uintptr_t) sp_2;                 // GPRX = a0, 到时候在 navy-apps 会将这个赋给sp, 这样用户程序就能读取用户栈里的入参和环境变量了
+  //printf("new user stack top=%p\n", sp_2);
+  ctx->GPRx = (uintptr_t) sp_2;                 // GPRX = a0, 到时候在 navy-apps 会将这个赋给sp, 这样用户程序就能读取用户栈里的入参和环境变量了
 }
