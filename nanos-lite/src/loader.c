@@ -3,6 +3,7 @@
 #include <proc.h>
 #include <elf.h>
 #include <fs.h>
+#include <stdio.h>
 
 #ifdef __LP64__
 # define Elf_Ehdr Elf64_Ehdr
@@ -77,7 +78,7 @@ static uintptr_t loader(PCB *pcb, const char *filename) {
 
 void naive_uload(PCB *pcb, const char *filename) {
   uintptr_t entry = loader(pcb, filename);
-  Log("Jump to entry = %p", entry);
+  Log("Jump to entry = %p", (char *)entry);
   ((void(*)())entry) ();
 }
 
@@ -134,7 +135,6 @@ void context_uload(PCB *pcb, const char *filename, char *const argv[], char *con
   }
   --sp_2;
   *((int*)sp_2) = argc;
-  
   // TODO：loader 需要放在参数压栈的后面，还没搞清楚是为什么
   AddrSpace addr;
   uintptr_t entry = loader(pcb, filename);

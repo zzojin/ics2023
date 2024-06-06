@@ -78,6 +78,8 @@ int main() {
             rep = 0; g = 0;
           }
           break;
+          default:
+          printf("no match key\n");
       }
     }
   }
