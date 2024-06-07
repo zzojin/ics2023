@@ -39,9 +39,9 @@ void init_proc() {
     //char *argv_exec_test[2] = {"/bin/exec-test", NULL};
     //context_uload(&pcb[1], "/bin/exec-test", argv_exec_test, NULL);
 
-    //context_uload(&pcb[1], "/bin/nterm", NULL, NULL);
+    context_uload(&pcb[1], "/bin/nterm", NULL, NULL);
 
-     context_uload(&pcb[1], "/bin/menu", NULL, NULL);
+     //context_uload(&pcb[1], "/bin/menu", NULL, NULL);
 
   switch_boot_pcb();
 
@@ -75,9 +75,9 @@ Context* schedule(Context *prev) {
 
 int execve(const char *path, char *const argv[], char *const envp[]) {
     int fd = fs_open(path, 0, 0);
-    if (fd == -1) {
-        Log("can not open %s", path);
-        return -1;
+    // 目前 fs_open 只会返回-1，表示文件不存在。至于因权限不足返回的情况，暂未实现
+    if (fd < 0) {
+        return fd;
     } else {
         fs_close(fd);
         Log("Loading %s", path);

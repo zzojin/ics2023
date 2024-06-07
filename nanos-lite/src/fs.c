@@ -58,7 +58,7 @@ int fs_open(const char *filename, int flags, int mode) {
             return i;
         }
     }
-    panic("cant find %s in ramdisk", filename);
+    Log("can not open %s, it's not in ramdisk", filename);
     return -1;
 }
 
