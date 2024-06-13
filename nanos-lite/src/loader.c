@@ -110,7 +110,7 @@ static uintptr_t loader(PCB *pcb, const char *filename) {
           read_len = min(PGSIZE - OFFSET(p_vaddr), unprocessed_size);
           unprocessed_size -= read_len;
           assert(fs_read(fd, pg_p + OFFSET(p_vaddr), read_len) >= 0);
-          map(&pcb->as, (void *)p_vaddr, pg_p, PTE_R | PTE_W | PTE_X);
+          map(&pcb->as, (void *)p_vaddr, pg_p, PTE_R | PTE_W | PTE_X | PTE_V);
           p_vaddr += read_len;
       }
       for (; p_vaddr < phdr[i].p_vaddr + file_size; p_vaddr += PGSIZE) {
@@ -120,7 +120,7 @@ static uintptr_t loader(PCB *pcb, const char *filename) {
           read_len = min(PGSIZE, unprocessed_size);
           unprocessed_size -= read_len;
           assert(fs_read(fd, pg_p, read_len) >= 0);
-          map(&pcb->as, (void *)p_vaddr, pg_p, PTE_R | PTE_W | PTE_X);
+          map(&pcb->as, (void *)p_vaddr, pg_p, PTE_R | PTE_W | PTE_X | PTE_V);
       }
       if (file_size == mem_size)
           continue;
@@ -129,7 +129,7 @@ static uintptr_t loader(PCB *pcb, const char *filename) {
           assert(IS_ALIGN(p_vaddr));
           pg_p = new_page(1);
           memset(pg_p, 0, PGSIZE);
-          map(&pcb->as, (void *)p_vaddr, pg_p, PTE_R | PTE_W | PTE_X);
+          map(&pcb->as, (void *)p_vaddr, pg_p, PTE_R | PTE_W | PTE_X | PTE_V);
       }
       // TODO: max_brk ?
       pcb->max_brk = p_vaddr;

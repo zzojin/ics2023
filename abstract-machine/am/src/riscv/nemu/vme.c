@@ -37,7 +37,7 @@ bool vme_init(void* (*pgalloc_f)(int), void (*pgfree_f)(void*)) {
   for (i = 0; i < LENGTH(segments); i ++) {
     void *va = segments[i].start;
     for (; va < segments[i].end; va += PGSIZE) {
-      map(&kas, va, va, 0);
+      map(&kas, va, va, PTE_R | PTE_W | PTE_X | PTE_V);
     }
   }
   set_satp(kas.ptr);
@@ -78,16 +78,16 @@ void __am_switch(Context *c) {
 void map(AddrSpace *as, void *va, void *pa, int prot) {
     va = (void *)((int)va & ~0xfff);
     pa = (void *)((int)pa & ~0xfff);
-    PTE *pte_1 = as->ptr + PGT1_ID((uintptr_t)va) * 4;          // 与 4 做乘法，需要从 void * 转成 uint 或 int
+    PTE *pte_1 = as->ptr + PGT1_ID((uintptr_t)va) * 4;          // 与 4 做乘法，va 需要从 void * 转成 uint 或 int
     if (!(*pte_1 & PTE_V)) {
         void *allocated_page = pgalloc_usr(PGSIZE);
         // 构造 PTE
-        *pte_1 = (uintptr_t)allocated_page >> 2 | PTE_V;  // PTE_V -> prot;
+        *pte_1 = ((uintptr_t)allocated_page >> 2) | prot;  // PTE_V -> prot 会出错, 因为用户进程和内核创建虚拟地址空间时，给map 的传参不规范，现已更改;
     }
     PTE *pte_2 = (PTE *)((PTE_PPN(*pte_1) << 12) + PGT2_ID((uintptr_t)va) * 4);
     // 构造PTE，pa 的低 12 位在开始就已清零，现在创建 22 位的 PPN，往右移动 2 位。然后构造低 10 位的控制位
-    *pte_2 = ((uintptr_t)pa >> 2) | PTE_V | PTE_R | PTE_W | PTE_X | (prot ? PTE_U : 0);
-    //*pte_2 = ((uintptr_t)pa >> 2) | prot;
+    //*pte_2 = ((uintptr_t)pa >> 2) | PTE_V | PTE_R | PTE_W | PTE_X | (prot ? PTE_U : 0);
+    *pte_2 = ((uintptr_t)pa >> 2) | prot;
 }
 
 Context *ucontext(AddrSpace *as, Area kstack, void *entry) {
