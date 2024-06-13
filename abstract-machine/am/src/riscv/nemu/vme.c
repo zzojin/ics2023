@@ -3,6 +3,7 @@
 #include <nemu.h>
 #include <klib.h>
 #include <stdint.h>
+#include <stdio.h>
 
 static AddrSpace kas = {};
 static void* (*pgalloc_usr)(int) = NULL;
@@ -31,7 +32,7 @@ bool vme_init(void* (*pgalloc_f)(int), void (*pgfree_f)(void*)) {
   pgfree_usr = pgfree_f;
 
   kas.ptr = pgalloc_f(PGSIZE);
-
+  // 创建内核地址空间
   int i;
   for (i = 0; i < LENGTH(segments); i ++) {
     void *va = segments[i].start;
@@ -39,14 +40,15 @@ bool vme_init(void* (*pgalloc_f)(int), void (*pgfree_f)(void*)) {
       map(&kas, va, va, 0);
     }
   }
-
   set_satp(kas.ptr);
+  printf("===========kernel as pdir %p==========\n", kas.ptr);
   vme_enable = 1;
 
   return true;
 }
 
 void protect(AddrSpace *as) {
+  // 创建用户进程地址空间，并用内核地址空间为其初始化。所以内核的地址，用户程序可以访问到的。后续会往用户地址段继续设置地址映射。
   PTE *updir = (PTE*)(pgalloc_usr(PGSIZE));
   as->ptr = updir;
   as->area = USER_SPACE;
@@ -80,17 +82,20 @@ void map(AddrSpace *as, void *va, void *pa, int prot) {
     if (!(*pte_1 & PTE_V)) {
         void *allocated_page = pgalloc_usr(PGSIZE);
         // 构造 PTE
-        *pte_1 = (uintptr_t)allocated_page >> 2 | PTE_V;
+        *pte_1 = (uintptr_t)allocated_page >> 2 | PTE_V;  // PTE_V -> prot;
     }
     PTE *pte_2 = (PTE *)((PTE_PPN(*pte_1) << 12) + PGT2_ID((uintptr_t)va) * 4);
     // 构造PTE，pa 的低 12 位在开始就已清零，现在创建 22 位的 PPN，往右移动 2 位。然后构造低 10 位的控制位
     *pte_2 = ((uintptr_t)pa >> 2) | PTE_V | PTE_R | PTE_W | PTE_X | (prot ? PTE_U : 0);
+    //*pte_2 = ((uintptr_t)pa >> 2) | prot;
 }
 
 Context *ucontext(AddrSpace *as, Area kstack, void *entry) {
   Context *c = (Context *)kstack.end - 1;
   c->mepc = (uintptr_t)entry - 4;
-  c->mstatus = 0x1800;
+  c->mstatus = 0xC0000 | 0x80;          // difftest  需要，创建用户进程时，设置成 U 模式,  且MXR=1 SUM=1
+  c->pdir = as->ptr;
+  printf("=============user context pdir=%p=============\n", c->pdir);
   //printf("entry=%x\n", c->mepc);
   return c;
 }

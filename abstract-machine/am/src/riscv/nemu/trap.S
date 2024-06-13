@@ -40,12 +40,12 @@ f(30) f(31)
 .align 3
 .globl __am_asm_trap
 __am_asm_trap:
-  # 开辟新的栈空间，容纳待保存的 32 个通用寄存器（不包括 sp 寄存器和 x0 寄存器），以及 3 个 csr 寄存器
+  # 开辟新的栈空间，容纳待保存的 32 个通用寄存器（不包括 sp 寄存器和 x0 寄存器），以及 3 个 csr 寄存器, 和一个虚拟空间地址映射的页目录地址pdir
   addi sp, sp, -CONTEXT_SIZE
   # 通用寄存器压栈。这份汇编代码会先用 C 语言的预处理器处理宏，然后再进行编译工作，所以能够使用 C 语言的宏定义方式
   MAP(REGS, PUSH)
   
-  # 将 csr 拷贝到通用寄存器，不能直接操作 csr 压栈
+  # 控制寄存器压栈。将 csr 拷贝到通用寄存器，不能直接操作 csr 压栈
   csrr t0, mcause
   csrr t1, mstatus
   csrr t2, mepc

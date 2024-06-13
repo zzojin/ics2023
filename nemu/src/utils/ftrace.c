@@ -108,7 +108,7 @@ void append(vaddr_t cur, vaddr_t target_addr, int dst_index, const char *type) {
         newnode->call_depth = call_depth;
     }
     Assert(call_depth >= 0, "function call depth less than 0, something wrong");
-    IFDEF(CONFIG_FTRACE, log_write("[ftrace] %x: %*s%s [%s@%x]", newnode->pc, newnode->call_depth, "", newnode->type, newnode->dst_func->name, newnode->target_addr));
+    IFDEF(CONFIG_FTRACE, log_write("[ftrace] %x: %s [%s@%x]\n", newnode->pc, newnode->type, newnode->dst_func->name, newnode->target_addr));
     if (func_stack_head == NULL) {
         func_stack_head = newnode;
         func_stack_tail = func_stack_head;
@@ -143,7 +143,8 @@ void print_func_stack() {
     log_write("=========== The function stack ===========\n");
     fnode *temp = func_stack_head;
     while (temp != NULL) {
-        log_write("%x: %*s%s [%s@%x]\n", temp->pc, temp->call_depth, "", temp->type, temp->dst_func->name, temp->target_addr);
+        //log_write("%x: %*s%s [%s@%x]\n", temp->pc, temp->call_depth, "", temp->type, temp->dst_func->name, temp->target_addr);
+        log_write("%x: %s [%s@%x]==\n", temp->pc, temp->type, temp->dst_func->name, temp->target_addr);
         temp = temp->next;
     }
 }

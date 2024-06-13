@@ -168,9 +168,11 @@ $(CLEAN_ALL):
 .PHONY: clean-all $(CLEAN_ALL)
 
 ### Build fsimg and ramdisk for Nanos-lite
-APPS = pal nterm menu nslider busybox
+APPS = 
+#pal nterm menu nslider busybox
 #nslider menu nterm bird
-TESTS = exec-test 
+TESTS = dummy
+#exec-test 
 #dummy hello file-test timer-test event-test bmp-test fixedptc-test
 
 ### 切换到 apps 和 tests 目录下的某程序目录，编译 install 目标

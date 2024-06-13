@@ -2,14 +2,20 @@
 #include <riscv/riscv.h>
 #include <klib.h>
 #include <nemu.h>
+#include <stdio.h>
 
 #define Machine_Software_Interrupt (11)
 #define User_Software_Interrupt (8)
 
 static Context* (*user_handler)(Event, Context*) = NULL;
+void __am_get_cur_as(Context *c);
+void __am_switch(Context *c);
 
 // trap.S 跳转过来. irq:interrupt request 
 Context* __am_irq_handle(Context *c) {
+  __am_get_cur_as(c);
+  //printf("[__am_irq_handle]: c->pdir 内容地址修改前 页表项:%p\t上下文地址%p\t所在栈帧:%p\n", c->pdir, c, &c);
+  //printf("ctx pdir %p\n", c->pdir);
   if (user_handler) {
     Event ev = {0};
     switch (c->mcause) {
@@ -19,7 +25,7 @@ Context* __am_irq_handle(Context *c) {
         default:
             ev.event = EVENT_ERROR;
     }
-    // 事件分发，交由事件处理函数，什么样的事件就执行对应的处理函数
+    // 事件分发，交由事件处理函数 do_event(irq.c)，什么样的事件就执行对应的处理函数
     //printf("before schedule, c address = %p\n", c);
     c = user_handler(ev, c);
 /*    printf("after schedule, c address = %p\n", c);
@@ -37,6 +43,7 @@ Context* __am_irq_handle(Context *c) {
     assert(c != NULL);
   }
 
+  __am_switch(c);
   return c;
 }
 
