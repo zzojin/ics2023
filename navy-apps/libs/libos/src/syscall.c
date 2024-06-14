@@ -72,13 +72,25 @@ int _write(int fd, void *buf, size_t count) {
 
 extern char end;
 static void * program_break = &end;
+/*void *_sbrk(intptr_t increment) {
+ *    if (_syscall_(SYS_brk, increment, 0, 0) == 0) {
+ *        void *ret = program_break;
+ *        program_break += increment;
+ *        return ret;
+ *    }
+ *    return (void *)-1;
+ *}*/
 void *_sbrk(intptr_t increment) {
-    if (_syscall_(SYS_brk, increment, 0, 0) == 0) {
-        void *ret = program_break;
-        program_break += increment;
-        return ret;
-    }
+  void *old_program_break = program_break;
+  
+  int ret = _syscall_(SYS_brk, (intptr_t)(program_break + increment), 0, 0);
+  if (ret == 0){
+    program_break = program_break + increment;
+  } else {
     return (void *)-1;
+  }
+  
+  return old_program_break;
 }
 
 int _read(int fd, void *buf, size_t count) {

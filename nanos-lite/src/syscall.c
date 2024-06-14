@@ -3,6 +3,7 @@
 #include <fs.h>
 #include <sys/time.h>
 #include <proc.h>
+#include <memory.h>
 #include "syscall.h"
 #include "am.h"
 #include "amdev.h"
@@ -97,7 +98,8 @@ static uintptr_t sys_close(uintptr_t *a) {
 }
 
 static uintptr_t sys_brk(uintptr_t *a) {
-    return 0;                   // always succeed
+    return mm_brk((uintptr_t)a[1]);
+    //return 0;                   // always succeed
 }
 
 static uintptr_t sys_gettimeofday(uintptr_t *a) {

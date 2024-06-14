@@ -33,8 +33,8 @@ void hello_fun(void *arg) {
 void init_proc() {
     //context_kload(&pcb[0], hello_fun, "zhoujin");
     
-    /*char *argv_pal[3] = {"pal", "--skip", NULL};
-     *context_uload(&pcb[1], "/bin/pal", argv_pal, NULL);*/
+    char *argv_pal[3] = {"pal", "--skip", NULL};
+    context_uload(&pcb[0], "/bin/pal", argv_pal, NULL);
 
     //char *argv_exec_test[2] = {"/bin/exec-test", NULL};
     //context_uload(&pcb[1], "/bin/exec-test", argv_exec_test, NULL);
@@ -42,7 +42,7 @@ void init_proc() {
     //context_uload(&pcb[1], "/bin/nterm", NULL, NULL);
 
      //context_uload(&pcb[1], "/bin/menu", NULL, NULL);
-      context_uload(&pcb[0], "/bin/dummy", NULL, NULL);
+      //context_uload(&pcb[0], "/bin/dummy", NULL, NULL);
 
 
   switch_boot_pcb();

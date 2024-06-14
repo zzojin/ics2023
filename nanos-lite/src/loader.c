@@ -23,13 +23,6 @@
 # define EXPECT_TYPE EM_MIPS
 #elif defined(__ISA_RISCV32__)
 # define EXPECT_TYPE EM_RISCV
-#define PTE_V 0x01
-#define PTE_R 0x02
-#define PTE_W 0x04
-#define PTE_X 0x08
-#define PTE_U 0x10
-#define PTE_A 0x40
-#define PTE_D 0x80
 
 #else
 # error Unsupported ISA
@@ -123,8 +116,10 @@ static uintptr_t loader(PCB *pcb, const char *filename) {
           assert(fs_read(fd, pg_p, read_len) >= 0);
           map(&pcb->as, (void *)p_vaddr, pg_p, PTE_R | PTE_W | PTE_X | PTE_V);
       }
-      if (file_size == mem_size)
+      if (file_size == mem_size) {
+          pcb->max_brk = p_vaddr;
           continue;
+      }
       memset(pg_p + read_len, 0, PGSIZE - read_len);
       for (; p_vaddr < phdr[i].p_vaddr + mem_size; p_vaddr += PGSIZE) {
           assert(IS_ALIGN(p_vaddr));

@@ -1,4 +1,6 @@
+#include "am.h"
 #include <memory.h>
+#include <proc.h>
 
 static void *pf = NULL;
 
@@ -21,9 +23,16 @@ void free_page(void *p) {
   panic("not implement yet");
 }
 
-/* The brk() system call handler. */
+/* The brk() system call handler. brk is end address of allocated space 
+ * In map, pcb->max_brk is aligned to 4KB*/
+extern PCB *current;
 int mm_brk(uintptr_t brk) {
-  return 0;
+    if (brk <= current->max_brk)
+        return 0;
+    for (; current->max_brk < brk; current->max_brk += PGSIZE) {
+        map(&current->as, (void *)current->max_brk, pg_alloc(PGSIZE), PTE_V | PTE_R | PTE_W | PTE_X);
+    }
+    return 0;
 }
 
 void init_mm() {
