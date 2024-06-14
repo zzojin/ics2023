@@ -1,5 +1,6 @@
 #include "am.h"
 #include "debug.h"
+#include "klib-macros.h"
 #include "memory.h"
 #include <proc.h>
 #include <elf.h>
@@ -145,10 +146,8 @@ void naive_uload(PCB *pcb, const char *filename) {
 }
 
 void context_kload(PCB *pcb, void (*entry)(void *), void *arg) {
-    Area area;
-    area.start = pcb->stack;
-    area.end = pcb->stack  + STACK_SIZE;
-    pcb->cp = kcontext(area, entry, arg);
+    Area kstack = RANGE(pcb, (char *)pcb + STACK_SIZE);
+    pcb->cp = kcontext(kstack, entry, arg);
 }
 
 static int len(char *const str[]) {

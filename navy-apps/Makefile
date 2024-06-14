@@ -124,6 +124,7 @@ libs:
 ### Rule (link): objects (`*.o`) and libraries (`*.a`) -> `$(APP)`, the final ELF binary to be packed into application (ld)
 $(APP): $(OBJS) libs
 	@echo + LD "->" $(shell realpath $@ --relative-to .)
+	$(info LDFLAGS = $(LDFLAGS))
 	@$(LD) $(LDFLAGS) -o $@ $(WL)--start-group $(LINKAGE) $(WL)--end-group
 
 ### Rule (archive): objects (`*.o`) -> `ARCHIVE.a` (ar)
