@@ -18,6 +18,7 @@ static Area segments[] = {      // Kernel memory mappings
 
 static inline void set_satp(void *pdir) {
   uintptr_t mode = 1ul << (__riscv_xlen - 1);
+  //printf("start set, mode addr=%p, pdir_addr=%p\n", &mode, &pdir);
   asm volatile("csrw satp, %0" : : "r"(mode | ((uintptr_t)pdir >> 12)));
 }
 
@@ -82,7 +83,7 @@ void map(AddrSpace *as, void *va, void *pa, int prot) {
     if (!(*pte_1 & PTE_V)) {
         void *allocated_page = pgalloc_usr(PGSIZE);
         // 构造 PTE
-        *pte_1 = ((uintptr_t)allocated_page >> 2) | prot;  // PTE_V -> prot 会出错, 因为用户进程和内核创建虚拟地址空间时，给map 的传参不规范，现已更改;
+        *pte_1 = ((uintptr_t)allocated_page >> 2) | prot;  //  | PTE_V 也可以, 但我觉得不规范
     }
     PTE *pte_2 = (PTE *)((PTE_PPN(*pte_1) << 12) + PGT2_ID((uintptr_t)va) * 4);
     // 构造PTE，pa 的低 12 位在开始就已清零，现在创建 22 位的 PPN，往右移动 2 位。然后构造低 10 位的控制位

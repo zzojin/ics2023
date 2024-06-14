@@ -49,7 +49,7 @@ static uintptr_t sys_execve(uintptr_t *a) {
 
 static uintptr_t sys_exit(uintptr_t *a) {
     Log("[strace]exit");                    // exit 系统调用使用 halt 函数实现的时候，直接就出去了，走不到 TRACE_CALL 的逻辑，所以手动在这里添加一个日志
-     halt(a[1]);                             // syscall 除了第一个参数，还传递了第二个 status。所以第二个参数a[1]就是 status
+     //halt(a[1]);                             // syscall 除了第一个参数，还传递了第二个 status。所以第二个参数a[1]就是 status
     return execve("/bin/nterm", NULL, NULL);
 }
 
