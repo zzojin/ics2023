@@ -57,7 +57,7 @@ enum {
 
 static word_t* csr_value(word_t imm) {
     switch (imm) {
-        case 0x300: return &cpu.mstatus;
+        case 0x300: return (word_t *)&cpu.mstatus;
         case 0x305: return &cpu.mtvec;
         case 0x341: return &cpu.mepc;
         case 0x342: return &cpu.mcause;
@@ -164,7 +164,7 @@ static int decode_exec(Decode *s) {
   INSTPAT("??????? ????? ????? 001 ????? 11100 11", csrrw  , I, R(rd) = *csr_value(imm); *csr_value(imm) = src1);
   INSTPAT("??????? ????? ????? 010 ????? 11100 11", csrrs  , I, R(rd) = *csr_value(imm); *csr_value(imm) |= src1);                   
   INSTPAT("0000000 00000 00000 000 00000 11100 11", ecall  , N, IFDEF(CONFIG_ETRACE, trace_exception(0xb, s->pc)); s->dnpc = isa_raise_intr(0xb, s->pc)); // s->dnpc 是异常处理逻辑的地址: am_asm_trap，这个地址在 am 初始化时就固定到 mtvec 寄存器中了。   
-  INSTPAT("0011000 00010 00000 000 00000 11100 11", mret   , N, s->dnpc = cpu.mepc);       // TODO: mret 的实现 nosae 与 ics2022 有较大区别. 讲义中说 ecall 系统调用这类异常是需要 +4，但是像缺页故障类的异常，异常处理结束后，需要继续在发生异常的 pc 上执行。因此要不要+4 是需要做判断的。RISCV 的判断交由软件实现，x86 则由硬件实现. 判断逻辑应该由事件号决定，每种异常类型可能有一个或多个异常码. mcause 寄存器保存了异常码/中断码，这里我们一定运行在 machine 状态，故异常码写死=11
+  INSTPAT("0011000 00010 00000 000 00000 11100 11", mret   , N, s->dnpc = cpu.mepc; cpu.mstatus.bits.MIE = cpu.mstatus.bits.MPIE, cpu.mstatus.bits.MPIE = 1);       // TODO: mret 的实现 nosae 与 ics2022 有较大区别. 讲义中说 ecall 系统调用这类异常是需要 +4，但是像缺页故障类的异常，异常处理结束后，需要继续在发生异常的 pc 上执行。因此要不要+4 是需要做判断的。RISCV 的判断交由软件实现，x86 则由硬件实现. 判断逻辑应该由事件号决定，每种异常类型可能有一个或多个异常码. mcause 寄存器保存了异常码/中断码，这里我们一定运行在 machine 状态，故异常码写死=11
                                                                                            // pa3-1 Difftest 证明这里不能+4。看后续实验的进展
   INSTPAT("??????? ????? ????? ??? ????? ????? ??", inv    , N, INV(s->pc));
   INSTPAT_END();

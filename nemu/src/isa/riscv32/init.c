@@ -34,7 +34,7 @@ static void restart() {
   cpu.gpr[0] = 0;
 
   // pa3-1: DiffTest机制正确工作
-  cpu.mstatus = 0x1800;
+  cpu.mstatus.value = 0x1800;
 }
 
 void init_isa() {

@@ -93,8 +93,8 @@ void map(AddrSpace *as, void *va, void *pa, int prot) {
 
 Context *ucontext(AddrSpace *as, Area kstack, void *entry) {
   Context *c = (Context *)kstack.end - 1;
-  c->mepc = (uintptr_t)entry - 4;
-  c->mstatus = 0xC0000 | 0x80;          // difftest  需要，创建用户进程时，设置成 U 模式,  且MXR=1 SUM=1
+  c->mepc = (uintptr_t)entry;
+  c->mstatus = 0xC0000 | MSTATUS_MPIE;          // difftest  需要，创建用户进程时，设置成 U 模式,  且MXR=1 SUM=1
   c->pdir = as->ptr;
   printf("=============user context pdir=%p=============\n", c->pdir);
   //printf("entry=%x\n", c->mepc);

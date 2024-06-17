@@ -20,7 +20,7 @@ static const char *keyname[256] __attribute__((used)) = {
 };
 
 size_t serial_write(const void *buf, size_t offset, size_t len) {
-    yield();
+    //yield();
     char *str = (char *)buf;
     for (int i = 0; i < len; i++){
         putch(str[i]);
@@ -29,7 +29,7 @@ size_t serial_write(const void *buf, size_t offset, size_t len) {
 }
 
 size_t events_read(void *buf, size_t offset, size_t len) {
-    yield();
+    //yield();
     AM_INPUT_KEYBRD_T ev = io_read(AM_INPUT_KEYBRD);
     if (ev.keycode == AM_KEY_NONE) {
         ((char *)buf)[0] = '\0';
@@ -50,7 +50,7 @@ size_t dispinfo_read(void *buf, size_t offset, size_t len) {
 }
 
 size_t fb_write(const void *buf, size_t offset, size_t len) {
-    yield();
+    //yield();
     AM_GPU_CONFIG_T cfg = io_read(AM_GPU_CONFIG);
     int x = (offset / 4) % cfg.width;               // 行内偏移
     int y = (offset / 4) / cfg.width;               // 行号

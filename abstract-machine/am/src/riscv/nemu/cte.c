@@ -6,6 +6,7 @@
 
 #define Machine_Software_Interrupt (11)
 #define User_Software_Interrupt (8)
+#define IRQ_TIMER 0x80000007
 
 static Context* (*user_handler)(Event, Context*) = NULL;
 void __am_get_cur_as(Context *c);
@@ -21,10 +22,24 @@ Context* __am_irq_handle(Context *c) {
     Event ev = {0};
     switch (c->mcause) {
         case Machine_Software_Interrupt: 
+        case User_Software_Interrupt:
             if (c->GPR1 == -1) { ev.event = EVENT_YIELD; break; }    // debug 加上 a = 1; // 可以观察到 yield 函数发起的 NO 就是 -1，并保存在 a7 寄存器.注意这个数不是异常码，更像是一种事件编号，系统调用编号等。
             else { ev.event = EVENT_SYSCALL; break; }
+        case IRQ_TIMER:
+            ev.event = EVENT_IRQ_TIMER;
+            break;
         default:
             ev.event = EVENT_ERROR;
+    }
+    
+    // mepc 修改，大多数情况是继续执行自陷指令的下一条指令，但是有几种情况例外
+    switch (ev.event) {
+        case EVENT_PAGEFAULT:
+        case EVENT_ERROR:
+        case EVENT_IRQ_TIMER:
+            break;
+        default:
+            c->mepc += 4;
     }
     // 事件分发，交由事件处理函数 do_event(irq.c)，什么样的事件就执行对应的处理函数
     //printf("before schedule, c address = %p\n", c);
@@ -33,23 +48,16 @@ Context* __am_irq_handle(Context *c) {
  *    printf("after schedule, sp = %p\n", c->gpr[2]);
  *    printf("after schedule, a0 GPRx = %p\n", c->GPRx);
  **/
-    // mepc 修改，大多数情况是继续执行自陷指令的下一条指令
-    switch (ev.event) {
-        case EVENT_PAGEFAULT:
-        case EVENT_ERROR:
-            break;
-        default:
-            c->mepc += 4;
-    }
+
     assert(c != NULL);
   }
-/*if (a == 1)*/
-        /*printf("after yield event,c pdir %p\n", c->pdir);  // 切换到内核线程之后，为何这个数值变成了内核的地址空间描述符指针，不应该继续保持 NULL 吗*/
+/*if (a == 1)
+ *        printf("after yield event,c pdir %p\n", c->pdir);  // 切换到内核线程之后，为何这个数值变成了内核的地址空间描述符指针，不应该继续保持 NULL 吗*/
 
   __am_switch(c);
-/*  if (a == 1)*/
-  /*printf("after switch %p\n", c->pdir);*/
-  /*a = 0;*/
+  /*if (a == 1)
+   *printf("after switch %p\n", c->pdir);
+   *a = 0;*/
   // riscv 架构函数的的第一个入参和返回值都是放在 a0 寄存器，也就是说，此时如果发生了 yield，a0 寄存器被更换为另一个进程或线程的 context 地址。
   // 从而返回到 trap 时，实现了偷梁换柱，切换进程. 
   // 但这也有一个问题，也就是说在 user_handler 执行完之后，return 之前，虽然 c 变了，但是仍然处在前一个进程的用户栈上（PA4-2 阶段运行此段代码时不会 从用户栈切换内核栈），此时一旦 am_switch切换到新进程或新线程的地址空间，任何访存都是非法的。
@@ -73,9 +81,9 @@ Context *kcontext(Area kstack, void (*entry)(void *), void *arg) {
   Context *ctx = (Context *)((uint8_t *)(kstack.end) - sizeof(Context));
 
   ctx->gpr[0] = 0;
-  ctx->mepc = (uintptr_t)entry - 4;
+  ctx->mepc = (uintptr_t)entry;
   //printf("==================kcontext=%x\n", ctx->mepc);
-  ctx->mstatus = 0x1800;         // 0x80 是MPIE，现在还不能添加，过不了 difftest 
+  ctx->mstatus = 0x1800 | MSTATUS_MPIE;         // 0x80 是MPIE，现在还不能添加，过不了 difftest 
   ctx->GPRx = (uintptr_t)arg;    // GPR2 和 GPRx 是一样的，都是 gpr[10]
   ctx->pdir = NULL;
   return ctx;
