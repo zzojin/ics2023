@@ -62,6 +62,7 @@ static word_t* csr_value(word_t imm) {
         case 0x341: return &cpu.mepc;
         case 0x342: return &cpu.mcause;
         case 0x180: return &cpu.satp;
+        case 0x340: return &cpu.mscratch;
         default: panic("unknown csr register address %x", imm);
     }
 }

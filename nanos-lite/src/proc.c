@@ -31,15 +31,15 @@ void hello_fun(void *arg) {
 }
 
 void init_proc() {
-    context_kload(&pcb[1], hello_fun, "zhoujin");
+    context_kload(&pcb[0], hello_fun, "zhoujin");
     
-    char *argv_pal[3] = {"pal", "--skip", NULL};
-    context_uload(&pcb[0], "/bin/pal", argv_pal, NULL);
+    /*char *argv_pal[3] = {"pal", "--skip", NULL};
+     *context_uload(&pcb[0], "/bin/pal", argv_pal, NULL);*/
 
-    //char *argv_exec_test[2] = {"/bin/exec-test", NULL};
-    //context_uload(&pcb[1], "/bin/exec-test", argv_exec_test, NULL);
+    /*char *argv_exec_test[2] = {"/bin/exec-test", NULL};
+     *context_uload(&pcb[1], "/bin/exec-test", argv_exec_test, NULL);*/
 
-    //context_uload(&pcb[0], "/bin/nterm", NULL, NULL);
+    context_uload(&pcb[1], "/bin/nterm", NULL, NULL);
 
      //context_uload(&pcb[1], "/bin/menu", NULL, NULL);
       //context_uload(&pcb[0], "/bin/dummy", NULL, NULL);
@@ -68,10 +68,16 @@ Context* schedule(Context *prev) {
 
     // always select pcb[0] as the new process
     //current = &pcb[0];
-
-    current = (current == &pcb[0] ? &pcb[1] : &pcb[0]);
+    static uint turn = 1;
+    if (turn % 3 == 0) {
+        current = &pcb[0];
+        turn = 0;
+    } else 
+        current = &pcb[1];
+    //current = (current == &pcb[0] ? &pcb[1] : &pcb[0]);
     //printf("pcb address = %p, context address = %p\n", current, current->cp);
     // then return the new context
+    turn++;
     return current->cp;
 }
 

@@ -86,6 +86,7 @@ Context *kcontext(Area kstack, void (*entry)(void *), void *arg) {
   ctx->mstatus = 0x1800 | MSTATUS_MPIE;         // 0x80 是MPIE，现在还不能添加，过不了 difftest 
   ctx->GPRx = (uintptr_t)arg;    // GPR2 和 GPRx 是一样的，都是 gpr[10]
   ctx->pdir = NULL;
+  ctx->mscratch = 0;
   return ctx;
 }
 

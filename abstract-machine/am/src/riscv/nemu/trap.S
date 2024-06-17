@@ -31,16 +31,22 @@ f(30) f(31)
 #define PUSH(n) STORE concat(x, n), (n * XLEN)(sp);
 #define POP(n)  LOAD  concat(x, n), (n * XLEN)(sp);
 
-#define CONTEXT_SIZE  ((NR_REGS + 3 + 1) * XLEN)
+#define CONTEXT_SIZE  ((NR_REGS + 3 + 1 + 1) * XLEN)
 #define OFFSET_SP     ( 2 * XLEN)
 #define OFFSET_CAUSE  ((NR_REGS + 0) * XLEN)
 #define OFFSET_STATUS ((NR_REGS + 1) * XLEN)
 #define OFFSET_EPC    ((NR_REGS + 2) * XLEN)
-
+# 上下文结构体在此有一个 pdir
+#define OFFSET_SCRATCH ((NR_REGS + 4) * XLEN)
 .align 3
 .globl __am_asm_trap
 __am_asm_trap:
+  csrrw sp, mscratch, sp  # 原子交换
+  bnez sp, save_context   # 如果 sp 不为零，跳转到 save_context 标签. take the branch if we trapped from user.
+  csrrw sp, mscratch, sp  # 如果 csrrw 之后 sp 为零，说明之前 mscratch 为零，trap 前就处于内核态, 于是重新切回来
+  
   # 开辟新的栈空间，容纳待保存的 32 个通用寄存器（不包括 sp 寄存器和 x0 寄存器），以及 3 个 csr 寄存器, 和一个虚拟空间地址映射的页目录地址pdir
+save_context:  
   addi sp, sp, -CONTEXT_SIZE
   # 通用寄存器压栈。这份汇编代码会先用 C 语言的预处理器处理宏，然后再进行编译工作，所以能够使用 C 语言的宏定义方式
   MAP(REGS, PUSH)
@@ -49,12 +55,16 @@ __am_asm_trap:
   csrr t0, mcause
   csrr t1, mstatus
   csrr t2, mepc
+  csrr t3, mscratch
   
   # 压入控制与状态寄存器
   STORE t0, OFFSET_CAUSE(sp)
   STORE t1, OFFSET_STATUS(sp)
   STORE t2, OFFSET_EPC(sp)
+  STORE t3, OFFSET_SCRATCH(sp)
 
+  # 已经将mscratch 的数值保存到内核栈上（如果自陷前是用户态，则是用户栈地址，如果是内核态，则为 0）。现在给 mscratch 清零，表示进入内核态
+  csrw mscratch, x0
   # set mstatus.MPRV to pass difftest
   li a0, (1 << 17)
   or t1, t1, a0
@@ -71,10 +81,18 @@ __am_asm_trap:
   # 异常处理结束，弹栈恢复异常出现之前的上下文
   LOAD t1, OFFSET_STATUS(sp)
   LOAD t2, OFFSET_EPC(sp)
+  LOAD t3, OFFSET_SCRATCH(sp)
   csrw mstatus, t1
   csrw mepc, t2
+  csrw mscratch, t3
 
   MAP(REGS, POP)
 
   addi sp, sp, CONTEXT_SIZE
+
+  csrrw sp, mscratch, sp
+  bnez sp, return_from_trap
+  csrrw sp, mscratch, sp
+
+return_from_trap:  
   mret
