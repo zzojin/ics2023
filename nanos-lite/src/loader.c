@@ -181,7 +181,7 @@ void context_uload(PCB *pcb, const char *filename, char *const argv[], char *con
   char* envs[envc];
   for (int i = 0; i < envc; ++i) {
     sp -= (ceil_4_bytes(strlen(envp[i]) + 1));     // +1 为了补充末尾的\0
-    strcpy(sp, argv[i]);
+    strcpy(sp, envp[i]);
     envs[i] = sp;
   }
   // 压入指针数组，每个元素都是一个指向字符串首字符地址的指针。设置 NULL 以做指针数组的结尾标识。
